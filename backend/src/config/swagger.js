@@ -565,6 +565,7 @@ export const serveSwagger = swaggerUi.serve;
 export const setupSwagger = swaggerUi.setup(swaggerDocument, {
   swaggerOptions: {
     persistAuthorization: true,
+    withCredentials: true,
   },
   customSiteTitle: "EMS API Documentation",
 });

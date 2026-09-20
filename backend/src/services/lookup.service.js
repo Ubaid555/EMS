@@ -95,16 +95,14 @@ export const validateLookupField = (category, incomingCode, existingCode = null)
   const cat = category.toUpperCase();
   const incoming = incomingCode.trim().toUpperCase();
 
-  // If cache is empty (e.g. fresh start before seeder), allow or warm up
-  if (!isInitialized || lookupCache.size === 0) {
-    return true;
-  }
-
   const categoryMap = lookupCache.get(cat);
 
   // 1. Check if category and code exist at all
   if (!categoryMap || !categoryMap.has(incoming)) {
-    const allowed = categoryMap ? Array.from(categoryMap.keys()).join(", ") : "none defined";
+    const allowed =
+      categoryMap && categoryMap.size > 0
+        ? Array.from(categoryMap.keys()).join(", ")
+        : "No options found. Master lookups may not be initialized.";
     throw new ApiError(
       400,
       `Invalid ${cat}: '${incoming}'. Valid options are: ${allowed}`

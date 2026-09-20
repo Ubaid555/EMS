@@ -39,7 +39,7 @@ export const registerEmployee = asyncHandler(async (req, res) => {
   });
 
   // Generate tokens & set cookies
-  await generateTokensAndSetCookies(employee, res);
+  const { accessToken } = await generateTokensAndSetCookies(employee, res);
 
   // Send success response
   return res
@@ -47,7 +47,10 @@ export const registerEmployee = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         201,
-        sanitizeEmployee(employee),
+        {
+          ...sanitizeEmployee(employee),
+          accessToken,
+        },
         "Employee registered successfully."
       )
     );
@@ -81,7 +84,7 @@ export const loginEmployee = asyncHandler(async (req, res) => {
   }
 
   // Generate new access & refresh tokens
-  await generateTokensAndSetCookies(employee, res);
+  const { accessToken } = await generateTokensAndSetCookies(employee, res);
 
   // Send response
   return res
@@ -89,7 +92,10 @@ export const loginEmployee = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        sanitizeEmployee(employee),
+        {
+          ...sanitizeEmployee(employee),
+          accessToken,
+        },
         "Login successful."
       )
     );
