@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { BCRYPT_SALT_ROUNDS } from "../../utils/constants.js";
+import env from "../../config/env.config.js";
 
 const employeeSchema = new mongoose.Schema(
   {
@@ -67,9 +68,9 @@ employeeSchema.methods.generateAccessToken = function () {
     {
       employeeId: this._id,
     },
-    process.env.ACCESS_TOKEN_SECRET,
+    env.ACCESS_TOKEN_SECRET,
     {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRES || "15m",
+      expiresIn: env.ACCESS_TOKEN_EXPIRES,
     }
   );
 };
@@ -84,9 +85,9 @@ employeeSchema.methods.generateRefreshToken = function () {
     {
       employeeId: this._id,
     },
-    process.env.REFRESH_TOKEN_SECRET,
+    env.REFRESH_TOKEN_SECRET,
     {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRES || "7d",
+      expiresIn: env.REFRESH_TOKEN_EXPIRES,
     }
   );
 };

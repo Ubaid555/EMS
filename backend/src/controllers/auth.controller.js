@@ -9,6 +9,7 @@ import {
   sanitizeEmployee,
 } from "../helpers/auth.helper.js";
 import { cookieOptions } from "../config/cookie.config.js";
+import env from "../config/env.config.js";
 
 export const registerEmployee = asyncHandler(async (req, res) => {
   // Extract data from request body (support nested credentials or flat payload)
@@ -119,7 +120,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   try {
     decodedToken = jwt.verify(
       incomingRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET
+      env.REFRESH_TOKEN_SECRET
     );
   } catch (error) {
     throw new ApiError(401, "Invalid or expired refresh Token.");

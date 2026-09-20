@@ -1,4 +1,5 @@
 import ApiError from "../utils/ApiError.js";
+import env from "../config/env.config.js";
 
 const errorHandler = (err, req, res, next) => {
   let error = err;
@@ -48,7 +49,7 @@ const errorHandler = (err, req, res, next) => {
     statusCode,
     message: error.message || "Internal Server Error",
     errors: error.errors || [],
-    ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
+    ...(env.isDevelopment && { stack: error.stack }),
   };
 
   return res.status(statusCode).json(response);

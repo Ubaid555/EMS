@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import Employee from "../models/employee/employee.model.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import env from "../config/env.config.js";
 
 export const protect = asyncHandler(async (req, res, next) => {
   // Get token from cookies or Authorization header
@@ -20,7 +21,7 @@ export const protect = asyncHandler(async (req, res, next) => {
   let decoded;
 
   try {
-    decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       throw new ApiError(401, "Access token has expired.");

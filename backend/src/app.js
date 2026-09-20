@@ -1,4 +1,4 @@
-import "dotenv/config";
+import env from "./config/env.config.js";
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
@@ -10,14 +10,21 @@ import ApiResponse from "./utils/ApiResponse.js";
 import ApiError from "./utils/ApiError.js";
 
 import authRoutes from "./routes/auth.routes.js";
+import lookupRoutes from "./routes/lookup.routes.js";
+import employeeRoutes from "./routes/employee/index.js";
+import { serveSwagger, setupSwagger } from "./config/swagger.js";
 
 const app = express();
 
-// Security HTTP headers
-app.use(helmet());
+// Security HTTP headers (CSP disabled so Swagger UI can execute scripts/styles)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
 
 const allowedOrigins = [
-  process.env.CLIENT_URL,
+  env.CLIENT_URL,
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:5174",
@@ -47,7 +54,12 @@ app.use(express.urlencoded({ extended: true }));
 // Parse Cookies
 app.use(cookieParser());
 
+// Swagger Interactive API Documentation
+app.use("/api-docs", serveSwagger, setupSwagger);
+
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/lookups", lookupRoutes);
+app.use("/api/v1/employee", employeeRoutes);
 
 app.get("/api/health", (req, res) => {
   res
