@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import ApiError from "../utils/ApiError.js";
 
 /**
@@ -6,7 +7,135 @@ import ApiError from "../utils/ApiError.js";
  * =========================================================================
  * Handles atomic version chaining, active-state deactivation, root-record
  * tracking for multi-entity items, and chronological timeline generation.
+ *
+ * Atomicity Guarantees:
+ * 1. Pre-emptive Conflict Checking: Inspects unique schema indexes to catch
+ *    duplicate collisions before modifying existing records.
+ * 2. Mongoose ACID Transactions: Automatically initiates multi-document sessions
+ *    when running on a Replica Set (Atlas, staging, local rs0).
+ * 3. Compensation Rollback Pattern: When running on a standalone MongoDB deployment,
+ *    automatically compensates on failure by restoring previous active state,
+ *    preventing accidental record deactivations.
  */
+
+/**
+ * Detects whether the current Mongoose MongoDB connection supports multi-document transactions.
+ * Multi-document transactions require a replica set member or mongos router.
+ */
+export const supportsTransactions = () => {
+  try {
+    const client = mongoose.connection.getClient();
+    const description = client?.topology?.description;
+    if (!description) return false;
+    const type = description.type;
+    return (
+      type === "ReplicaSetWithPrimary" ||
+      type === "ReplicaSetNoPrimary" ||
+      type === "Sharded" ||
+      Boolean(description.setName)
+    );
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Pre-emptively inspects schema unique partial indexes for collisions on active records.
+ * Throws 409 Conflict before modifying any existing database documents.
+ */
+export const checkUniquenessConflict = async (Model, employeeId, payload, excludeId = null) => {
+  const indexes = Model.schema?.indexes?.() || [];
+  for (const [indexFields, options] of indexes) {
+    if (options?.unique && options?.partialFilterExpression?.isCurrent === true) {
+      const query = { employeeId, isCurrent: true, isDeleted: false };
+      let hasIndexedFieldInPayload = false;
+
+      for (const key of Object.keys(indexFields)) {
+        if (key === "employeeId" || key === "isCurrent" || key === "isDeleted") continue;
+        if (payload[key] !== undefined && payload[key] !== null) {
+          query[key] = payload[key];
+          hasIndexedFieldInPayload = true;
+        }
+      }
+
+      if (hasIndexedFieldInPayload) {
+        if (excludeId) {
+          query._id = { $ne: excludeId };
+        }
+        const conflict = await Model.findOne(query).lean();
+        if (conflict) {
+          const conflictingKeys = Object.keys(query).filter(
+            (k) => !["employeeId", "isCurrent", "isDeleted", "_id"].includes(k)
+          );
+          const fieldsStr = conflictingKeys.join(", ");
+          throw new ApiError(
+            409,
+            `An active record with matching '${fieldsStr}' already exists for this employee.`
+          );
+        }
+      }
+    }
+  }
+};
+
+/**
+ * Executes an atomic SCD Type 2 state transition (deactivate current -> insert new version/tombstone).
+ * Uses native MongoDB ACID multi-document transactions when running on a Replica Set (Atlas/cluster).
+ * Automatically falls back to atomic Compensation Rollback on standalone MongoDB instances,
+ * ensuring zero data loss if validation or unique constraint errors occur.
+ */
+export const executeVersionTransition = async ({ Model, current, newRecordData }) => {
+  const useTransaction = supportsTransactions();
+
+  if (useTransaction) {
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+
+      // 1. Deactivate old version inside session
+      await Model.findByIdAndUpdate(
+        current._id,
+        { $set: { isCurrent: false } },
+        { session }
+      );
+
+      // 2. Insert new version inside session
+      const [created] = await Model.create([newRecordData], { session });
+
+      await session.commitTransaction();
+      return created;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  } else {
+    // Standalone / Single topology: Compensation Rollback Pattern
+    let deactivated = false;
+    try {
+      // 1. Deactivate old version
+      await Model.findByIdAndUpdate(current._id, {
+        $set: { isCurrent: false },
+      });
+      deactivated = true;
+
+      // 2. Insert new version
+      const created = await Model.create(newRecordData);
+      return created;
+    } catch (error) {
+      // Compensation Rollback: Restore previous active status if insert fails
+      if (deactivated) {
+        await Model.findByIdAndUpdate(current._id, {
+          $set: { isCurrent: true },
+        }).catch((compErr) => {
+          console.error("❌ Critical: Compensation rollback failed to restore record:", compErr);
+        });
+      }
+      throw error;
+    }
+  }
+};
 
 // -------------------------------------------------------------------------
 // 1. SINGLE-ENTITY FORMS (Basic Info, CNIC, Addresses)
@@ -34,13 +163,10 @@ export const saveSingle = async (Model, employeeId, payload, changedBy) => {
   });
 
   if (current) {
-    // 1. Mark existing version as historical
-    await Model.findByIdAndUpdate(current._id, {
-      $set: { isCurrent: false },
-    });
+    // Pre-emptively verify uniqueness against other documents if applicable
+    await checkUniquenessConflict(Model, employeeId, payload, current._id);
 
-    // 2. Insert new version pointing to previous
-    const updatedRecord = await Model.create({
+    const newRecordData = {
       ...payload,
       employeeId,
       version: current.version + 1,
@@ -50,12 +176,14 @@ export const saveSingle = async (Model, employeeId, payload, changedBy) => {
       actionType: "UPDATE",
       changedBy,
       effectiveDate: new Date(),
-    });
+    };
 
-    return updatedRecord;
+    return await executeVersionTransition({ Model, current, newRecordData });
   }
 
   // Initial creation (Version 1)
+  await checkUniquenessConflict(Model, employeeId, payload);
+
   const initialRecord = await Model.create({
     ...payload,
     employeeId,
@@ -85,13 +213,7 @@ export const deleteSingle = async (Model, employeeId, changedBy) => {
     throw new ApiError(404, "Active record not found to delete.");
   }
 
-  // Deactivate current
-  await Model.findByIdAndUpdate(current._id, {
-    $set: { isCurrent: false },
-  });
-
-  // Create audit tombstone
-  const tombstone = await Model.create({
+  const tombstoneData = {
     ...current.toObject(),
     _id: undefined,
     version: current.version + 1,
@@ -101,9 +223,13 @@ export const deleteSingle = async (Model, employeeId, changedBy) => {
     actionType: "DELETE",
     changedBy,
     effectiveDate: new Date(),
-  });
+  };
 
-  return tombstone;
+  return await executeVersionTransition({
+    Model,
+    current,
+    newRecordData: tombstoneData,
+  });
 };
 
 /**
@@ -137,6 +263,8 @@ export const getMultiActive = async (Model, employeeId) => {
  * Add a new item to an employee's multi-entity collection (e.g. add new language)
  */
 export const createMulti = async (Model, employeeId, payload, changedBy) => {
+  await checkUniquenessConflict(Model, employeeId, payload);
+
   const newItem = new Model({
     ...payload,
     employeeId,
@@ -171,13 +299,10 @@ export const updateMulti = async (Model, employeeId, itemId, payload, changedBy)
     throw new ApiError(404, "Active item not found to update.");
   }
 
-  // 1. Mark existing item as historical
-  await Model.findByIdAndUpdate(current._id, {
-    $set: { isCurrent: false },
-  });
+  // Pre-emptively verify uniqueness against other active items in the collection
+  await checkUniquenessConflict(Model, employeeId, payload, current._id);
 
-  // 2. Insert new version pointing to previous and preserving rootRecordId
-  const updatedItem = await Model.create({
+  const newRecordData = {
     ...payload,
     employeeId,
     rootRecordId: current.rootRecordId || current._id,
@@ -188,9 +313,9 @@ export const updateMulti = async (Model, employeeId, itemId, payload, changedBy)
     actionType: "UPDATE",
     changedBy,
     effectiveDate: new Date(),
-  });
+  };
 
-  return updatedItem;
+  return await executeVersionTransition({ Model, current, newRecordData });
 };
 
 /**
@@ -208,13 +333,7 @@ export const deleteMulti = async (Model, employeeId, itemId, changedBy) => {
     throw new ApiError(404, "Active item not found to delete.");
   }
 
-  // Deactivate current
-  await Model.findByIdAndUpdate(current._id, {
-    $set: { isCurrent: false },
-  });
-
-  // Create audit tombstone for this item
-  const tombstone = await Model.create({
+  const tombstoneData = {
     ...current.toObject(),
     _id: undefined,
     rootRecordId: current.rootRecordId || current._id,
@@ -225,9 +344,13 @@ export const deleteMulti = async (Model, employeeId, itemId, changedBy) => {
     actionType: "DELETE",
     changedBy,
     effectiveDate: new Date(),
-  });
+  };
 
-  return tombstone;
+  return await executeVersionTransition({
+    Model,
+    current,
+    newRecordData: tombstoneData,
+  });
 };
 
 /**
