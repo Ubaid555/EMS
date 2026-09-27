@@ -32,6 +32,7 @@ export const swaggerDocument = {
     { name: "Employee - CNIC", description: "Form 2: National Identity (SCD Type 2 Versioned)" },
     { name: "Employee - Languages", description: "Form 4: Language Proficiencies (Multi-Entity SCD2)" },
     { name: "Employee - Contacts", description: "Form 9: Polymorphic Contacts (Social Media, Emergency, Phone) (Multi-Entity SCD2)" },
+    { name: "Employee - Addresses", description: "Form 10: Permanent & Present Residential Addresses (SCD Type 2 Versioned)" },
     { name: "System Health", description: "API Status & Liveness" },
   ],
   paths: {
@@ -734,6 +735,189 @@ export const swaggerDocument = {
         summary: "Get Full Chronological Log of ALL Contact Activities for Employee",
         responses: {
           200: { description: "Full chronological event stream" },
+        },
+      },
+    },
+
+    // ----------------------------------------------------
+    // EMPLOYEE: ADDRESSES (FORM 10 - PERMANENT & PRESENT)
+    // ----------------------------------------------------
+    "/api/v1/employee/addresses": {
+      get: {
+        tags: ["Employee - Addresses"],
+        summary: "Get Both Active Permanent and Present Addresses in 1 Request (Form Load)",
+        responses: {
+          200: {
+            description: "Object containing active permanent and present address records",
+            content: {
+              "application/json": {
+                example: {
+                  statusCode: 200,
+                  data: {
+                    permanent: {
+                      addressLine: "House 45, Street 12, Sector B",
+                      street: "Street 12",
+                      postOffice: "Model Town Post Office",
+                      landlineNumbers: ["042-35889901"],
+                      place: {
+                        country: "PK",
+                        state: "PK_PUNJAB",
+                        district: "LAHORE_DIST",
+                        city: "LAHORE",
+                        town: "MODEL_TOWN",
+                        localityOrMuhalla: "Block B"
+                      }
+                    },
+                    present: {
+                      sameAsPermanent: true,
+                      isForeignAddress: false,
+                      addressLine: "House 45, Street 12, Sector B"
+                    }
+                  },
+                  message: "Active addresses fetched successfully.",
+                  success: true
+                }
+              }
+            }
+          },
+        },
+      },
+    },
+
+    "/api/v1/employee/addresses/permanent": {
+      get: {
+        tags: ["Employee - Addresses"],
+        summary: "Get Current Active Permanent Address",
+        responses: {
+          200: { description: "Active permanent address details" },
+        },
+      },
+      put: {
+        tags: ["Employee - Addresses"],
+        summary: "Save or Update Permanent Address (Triggers SCD Type 2 versioning)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  addressLine: { type: "string", example: "House 45, Street 12, Sector B" },
+                  street: { type: "string", example: "Street 12" },
+                  postOffice: { type: "string", example: "Model Town Post Office" },
+                  landlineNumbers: {
+                    type: "array",
+                    items: { type: "string" },
+                    example: ["042-35889901", "042-35889902"],
+                  },
+                  place: {
+                    type: "object",
+                    properties: {
+                      country: { type: "string", example: "PK" },
+                      state: { type: "string", example: "PK_PUNJAB" },
+                      district: { type: "string", example: "LAHORE_DIST" },
+                      city: { type: "string", example: "LAHORE" },
+                      town: { type: "string", example: "MODEL_TOWN" },
+                      localityOrMuhalla: { type: "string", example: "Block B" },
+                    },
+                  },
+                  notes: { type: "string", example: "Verified from Utility Bill" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Permanent address version created/updated" },
+        },
+      },
+    },
+
+    "/api/v1/employee/addresses/permanent/history": {
+      get: {
+        tags: ["Employee - Addresses"],
+        summary: "Get Full SCD Type 2 Audit History for Permanent Address",
+        responses: {
+          200: { description: "Permanent address version timeline" },
+        },
+      },
+    },
+
+    "/api/v1/employee/addresses/present": {
+      get: {
+        tags: ["Employee - Addresses"],
+        summary: "Get Current Active Present Address",
+        responses: {
+          200: { description: "Active present address details" },
+        },
+      },
+      put: {
+        tags: ["Employee - Addresses"],
+        summary: "Save or Update Present Address (Handles sameAsPermanent & isForeignAddress)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  sameAsPermanent: {
+                    type: "boolean",
+                    description: "If true, backend auto-copies fields from active Permanent Address",
+                    example: false,
+                  },
+                  isForeignAddress: {
+                    type: "boolean",
+                    description: "If true, foreignAddress is required and local fields are ignored",
+                    example: false,
+                  },
+                  addressLine: { type: "string", example: "Flat 4B, Gulberg Heights" },
+                  street: { type: "string", example: "Main Boulevard" },
+                  postOffice: { type: "string", example: "Gulberg Post Office" },
+                  landlineNumbers: {
+                    type: "array",
+                    items: { type: "string" },
+                    example: ["042-35750000"],
+                  },
+                  place: {
+                    type: "object",
+                    properties: {
+                      country: { type: "string", example: "PK" },
+                      state: { type: "string", example: "PK_PUNJAB" },
+                      district: { type: "string", example: "LAHORE_DIST" },
+                      city: { type: "string", example: "LAHORE" },
+                      town: { type: "string", example: "GULBERG" },
+                      localityOrMuhalla: { type: "string", example: "Block C3" },
+                    },
+                  },
+                  foreignAddress: {
+                    type: "string",
+                    description: "Required when isForeignAddress is true",
+                    example: "123 Business Bay, Tower 4, Dubai, UAE",
+                  },
+                  telegraphOffice: {
+                    type: "string",
+                    example: "Dubai Central Post",
+                  },
+                  notes: { type: "string", example: "Rental apartment near office" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Present address version created/updated" },
+          400: { description: "Validation failure or Permanent address missing when sameAsPermanent is true" },
+        },
+      },
+    },
+
+    "/api/v1/employee/addresses/present/history": {
+      get: {
+        tags: ["Employee - Addresses"],
+        summary: "Get Full SCD Type 2 Audit History for Present Address",
+        responses: {
+          200: { description: "Present address version timeline" },
         },
       },
     },
