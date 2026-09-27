@@ -1,13 +1,17 @@
+import mongoose from "mongoose";
 import Lookup from "../models/lookup/lookup.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { refreshLookupCache } from "../services/lookup.service.js";
+import {
+  refreshLookupCache,
+  getLookupCacheSummary,
+} from "../services/lookup.service.js";
 
 /**
  * =========================================
  * Get Lookups by Category (with cascading parent support)
- * GET /api/v1/lookups?category=CITY&parent=123
+ * GET /api/v1/lookups?category=CITY&parent=123 (or parent=LAHORE_DIST)
  * =========================================
  */
 export const getLookups = asyncHandler(async (req, res) => {
@@ -19,8 +23,16 @@ export const getLookups = asyncHandler(async (req, res) => {
     query.category = category.trim().toUpperCase();
   }
 
-  if (parent !== undefined) {
-    query.parent = parent === "null" || parent === "" ? null : parent;
+  if (parent !== undefined && parent !== "null" && parent !== "") {
+    const trimmedParent = String(parent).trim();
+    if (mongoose.Types.ObjectId.isValid(trimmedParent) && trimmedParent.length === 24) {
+      query.parent = trimmedParent;
+    } else {
+      const parentLookup = await Lookup.findOne({ code: trimmedParent.toUpperCase() });
+      query.parent = parentLookup ? parentLookup._id : new mongoose.Types.ObjectId();
+    }
+  } else if (parent === "null" || parent === "") {
+    query.parent = null;
   }
 
   if (includeInactive !== "true") {
@@ -263,3 +275,18 @@ export const toggleLookupStatus = asyncHandler(async (req, res) => {
       )
     );
 });
+
+/**
+ * =========================================
+ * Get In-Memory Lookup Cache Stats
+ * GET /api/v1/lookups/cache/stats
+ * =========================================
+ */
+export const getCacheStats = asyncHandler(async (req, res) => {
+  const stats = getLookupCacheSummary();
+  console.log("📊 [Lookup Cache Stats Diagnostic]:", stats);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, stats, "Lookup in-memory cache statistics retrieved."));
+});
+

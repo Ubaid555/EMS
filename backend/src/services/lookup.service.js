@@ -44,9 +44,12 @@ export const refreshLookupCache = async () => {
     }
 
     isInitialized = true;
+    console.log(
+      `⚡ [Lookup Cache Warm] Loaded ${allLookups.length} options across ${lookupCache.size} categories into RAM memory.`
+    );
     return true;
   } catch (error) {
-    console.error("Failed to initialize Lookup Cache:", error);
+    console.error("❌ Failed to initialize Lookup Cache:", error);
     return false;
   }
 };
@@ -56,6 +59,7 @@ export const refreshLookupCache = async () => {
  */
 export const ensureCacheInitialized = async () => {
   if (!isInitialized) {
+    console.log("ℹ️ [Lookup Cache] Cache not initialized, warming up from DB now...");
     await refreshLookupCache();
   }
 };
@@ -68,7 +72,11 @@ export const isCodeValid = (category, code) => {
   const cat = category.toUpperCase();
   const cd = code.toUpperCase();
   const categoryMap = lookupCache.get(cat);
-  return categoryMap ? categoryMap.has(cd) : false;
+  const exists = categoryMap ? categoryMap.has(cd) : false;
+  console.log(
+    `🔍 [Lookup Cache Check] ${cat}: '${cd}' exists? ${exists ? "YES" : "NO"} (Source: RAM)`
+  );
+  return exists;
 };
 
 /**
@@ -103,6 +111,11 @@ export const validateLookupField = (category, incomingCode, existingCode = null)
       categoryMap && categoryMap.size > 0
         ? Array.from(categoryMap.keys()).join(", ")
         : "No options found. Master lookups may not be initialized.";
+    console.log(
+      `❌ [Lookup Cache MISS] Category '${cat}', Code '${incoming}' NOT found in RAM. Available in category (${categoryMap?.size || 0}): ${
+        categoryMap ? Array.from(categoryMap.keys()).slice(0, 6).join(", ") : "none"
+      }`
+    );
     throw new ApiError(
       400,
       `Invalid ${cat}: '${incoming}'. Valid options are: ${allowed}`
@@ -114,6 +127,9 @@ export const validateLookupField = (category, incomingCode, existingCode = null)
   if (!itemData.isActive) {
     const isUntouched = existingCode && existingCode.trim().toUpperCase() === incoming;
     if (!isUntouched) {
+      console.log(
+        `⚠️ [Lookup Cache INACTIVE] ${cat}: '${incoming}' is deactivated in RAM.`
+      );
       throw new ApiError(
         400,
         `Option '${incoming}' for ${cat} is inactive/discontinued and cannot be selected for new changes.`
@@ -121,7 +137,26 @@ export const validateLookupField = (category, incomingCode, existingCode = null)
     }
   }
 
+  console.log(
+    `✅ [Lookup Cache HIT] Validated ${cat}: '${incoming}' (${itemData.label}) directly from RAM [0ms, 0 DB queries]. Total options in ${cat}: ${categoryMap.size}`
+  );
+
   return true;
+};
+
+/**
+ * Diagnostic summary of RAM cache content
+ */
+export const getLookupCacheSummary = () => {
+  const categoryCounts = {};
+  for (const [cat, map] of lookupCache.entries()) {
+    categoryCounts[cat] = map.size;
+  }
+  return {
+    isInitialized,
+    totalCategories: lookupCache.size,
+    categoryCounts,
+  };
 };
 
 export default {
@@ -130,4 +165,5 @@ export default {
   isCodeValid,
   isCodeActive,
   validateLookupField,
+  getLookupCacheSummary,
 };

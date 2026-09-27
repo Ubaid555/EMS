@@ -2,6 +2,13 @@ import "dotenv/config";
 import mongoose from "mongoose";
 import connectDB from "../config/connectDB.js";
 import Lookup from "../models/lookup/lookup.model.js";
+import {
+  geoCountries,
+  geoStates,
+  geoDistricts,
+  geoCities,
+  geoTowns,
+} from "./geoLookups.data.js";
 
 export const initialLookups = [
   // GENDER
@@ -71,23 +78,120 @@ export const seedLookups = async (options = { isStandalone: false }) => {
       await connectDB();
     }
 
-    const operations = initialLookups.map((item) => ({
+    // 1. General Lookups
+    const generalOps = initialLookups.map((item) => ({
       updateOne: {
         filter: { category: item.category, code: item.code },
         update: { $set: item },
         upsert: true,
       },
     }));
+    await Lookup.bulkWrite(generalOps);
 
-    const result = await Lookup.bulkWrite(operations);
+    // 2. Countries (Level 1, parent: null)
+    const countryOps = geoCountries.map((item) => ({
+      updateOne: {
+        filter: { category: item.category, code: item.code },
+        update: { $set: { ...item, parent: null } },
+        upsert: true,
+      },
+    }));
+    await Lookup.bulkWrite(countryOps);
+
+    // Fetch Countries to map code -> _id
+    const countries = await Lookup.find({ category: "COUNTRY" }).select("_id code").lean();
+    const countryMap = new Map(countries.map((c) => [c.code, c._id]));
+
+    // Clean up any legacy unscoped state codes
+    await Lookup.deleteMany({
+      category: "STATE",
+      code: { $in: ["PUNJAB", "SINDH", "KPK", "BALOCHISTAN", "ISLAMABAD", "AJK", "GILGIT_BALTISTAN"] },
+    });
+
+    // 3. States / Provinces (Level 2, parent: country._id)
+    const stateOps = geoStates.map((item) => {
+      const parentId = countryMap.get(item.parentCode) || null;
+      const { parentCode, ...doc } = item;
+      return {
+        updateOne: {
+          filter: { category: doc.category, code: doc.code },
+          update: { $set: { ...doc, parent: parentId } },
+          upsert: true,
+        },
+      };
+    });
+    await Lookup.bulkWrite(stateOps);
+
+    // Fetch States to map code -> _id
+    const states = await Lookup.find({ category: "STATE" }).select("_id code").lean();
+    const stateMap = new Map(states.map((s) => [s.code, s._id]));
+
+    // 4. Districts (Level 3, parent: state._id)
+    const districtOps = geoDistricts.map((item) => {
+      const parentId = stateMap.get(item.parentCode) || null;
+      const { parentCode, ...doc } = item;
+      return {
+        updateOne: {
+          filter: { category: doc.category, code: doc.code },
+          update: { $set: { ...doc, parent: parentId } },
+          upsert: true,
+        },
+      };
+    });
+    await Lookup.bulkWrite(districtOps);
+
+    // Fetch Districts to map code -> _id
+    const districts = await Lookup.find({ category: "DISTRICT" }).select("_id code").lean();
+    const districtMap = new Map(districts.map((d) => [d.code, d._id]));
+
+    // 5. Cities (Level 4, parent: district._id)
+    const cityOps = geoCities.map((item) => {
+      const parentId = districtMap.get(item.parentCode) || null;
+      const { parentCode, ...doc } = item;
+      return {
+        updateOne: {
+          filter: { category: doc.category, code: doc.code },
+          update: { $set: { ...doc, parent: parentId } },
+          upsert: true,
+        },
+      };
+    });
+    await Lookup.bulkWrite(cityOps);
+
+    // Fetch Cities to map code -> _id
+    const cities = await Lookup.find({ category: "CITY" }).select("_id code").lean();
+    const cityMap = new Map(cities.map((c) => [c.code, c._id]));
+
+    // 6. Towns (Level 5, parent: city._id)
+    const townOps = geoTowns.map((item) => {
+      const parentId = cityMap.get(item.parentCode) || null;
+      const { parentCode, ...doc } = item;
+      return {
+        updateOne: {
+          filter: { category: doc.category, code: doc.code },
+          update: { $set: { ...doc, parent: parentId } },
+          upsert: true,
+        },
+      };
+    });
+    await Lookup.bulkWrite(townOps);
+
+    const totalCount =
+      initialLookups.length +
+      geoCountries.length +
+      geoStates.length +
+      geoDistricts.length +
+      geoCities.length +
+      geoTowns.length;
+
     console.log(
-      `🌱 Master lookups synchronized. Upserted: ${result.upsertedCount}, Modified: ${result.modifiedCount}, Total: ${operations.length}`
+      `🌱 Master lookups & Geographic hierarchy synchronized. (Total: ${totalCount} records)`
     );
 
     if (options.isStandalone) {
       process.exit(0);
     }
-    return result;
+    return true;
   } catch (error) {
     console.error("❌ Error synchronizing lookups:", error);
     if (options.isStandalone) {

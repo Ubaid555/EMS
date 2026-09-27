@@ -172,7 +172,8 @@ export const swaggerDocument = {
             in: "query",
             required: false,
             schema: { type: "string" },
-            description: "Parent Lookup ObjectId for cascading dropdowns (e.g. District ID for Cities)",
+            description: "Parent Lookup ObjectId OR parent code for cascading dropdowns (e.g. 'PK' for States, 'PUNJAB' for Districts, 'LAHORE_DIST' for Cities, 'LAHORE' for Towns)",
+            example: "PK",
           },
           {
             name: "includeInactive",
@@ -353,8 +354,9 @@ export const swaggerDocument = {
                     type: "object",
                     properties: {
                       country: { type: "string", example: "PK" },
-                      city: { type: "string", example: "LAHORE" },
+                      state: { type: "string", example: "PK_PUNJAB" },
                       district: { type: "string", example: "LAHORE_DIST" },
+                      city: { type: "string", example: "LAHORE" },
                       town: { type: "string", example: "MODEL_TOWN" },
                       localityOrMuhalla: { type: "string", example: "House 12, Block B" },
                     },

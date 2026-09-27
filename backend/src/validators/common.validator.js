@@ -35,8 +35,9 @@ export const lookupCodeValidator = (category, isRequired = true) => {
 export const placeSelectorValidator = z
   .object({
     country: z.string().trim().optional(),
-    city: z.string().trim().optional(),
+    state: z.string().trim().optional(),
     district: z.string().trim().optional(),
+    city: z.string().trim().optional(),
     town: z.string().trim().optional(),
     localityOrMuhalla: z.string().trim().optional(),
   })

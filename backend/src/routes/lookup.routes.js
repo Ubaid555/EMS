@@ -3,6 +3,7 @@ import {
   bulkCreateLookups,
   createLookup,
   getBulkLookups,
+  getCacheStats,
   getCategories,
   getLookups,
   toggleLookupStatus,
@@ -13,6 +14,7 @@ import { protect } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 // Public / Form Dropdown routes (Employees can query them without restrictions)
+router.get("/cache/stats", getCacheStats);
 router.get("/", getLookups);
 router.get("/bulk", getBulkLookups);
 router.get("/categories", getCategories);
