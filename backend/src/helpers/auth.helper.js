@@ -25,9 +25,13 @@ export const sanitizeEmployee = (employee) => {
   return {
     _id: employee._id,
     credentials: {
-      email: employee.credentials?.email,
+      role: employee.credentials?.role,
+      subCategory: employee.credentials?.subCategory,
+      assignedNumber: employee.credentials?.assignedNumber,
+      email: employee.credentials?.email || "",
     },
     createdAt: employee.createdAt,
     updatedAt: employee.updatedAt,
   };
 };
+

@@ -7,12 +7,38 @@ import env from "../../config/env.config.js";
 const employeeSchema = new mongoose.Schema(
   {
     credentials: {
+      role: {
+        type: String,
+        required: [true, "Role is required."],
+        enum: {
+          values: ["ADMIN", "TEACHER", "STAFF", "OTHER_STAFF"],
+          message: "Role must be ADMIN, TEACHER, or STAFF.",
+        },
+        uppercase: true,
+        trim: true,
+      },
+      subCategory: {
+        type: String,
+        enum: {
+          values: ["MONTESSORI", "PRIMARY", "MIDDLE", "HIGH", "COLLEGE", null],
+          message:
+            "Sub-category for teacher must be MONTESSORI, PRIMARY, MIDDLE, HIGH, or COLLEGE.",
+        },
+        default: null,
+        uppercase: true,
+        trim: true,
+      },
+      assignedNumber: {
+        type: String,
+        required: [true, "Assigned number is required."],
+        trim: true,
+      },
       email: {
         type: String,
-        required: [true, "Email is required."],
-        unique: true,
+        required: false,
         lowercase: true,
         trim: true,
+        default: "",
       },
       password: {
         type: String,
@@ -31,6 +57,58 @@ const employeeSchema = new mongoose.Schema(
   {
     timestamps: true,
   }
+);
+
+/**
+ * =========================================================================
+ * Normalization & Validation Hook
+ * =========================================================================
+ */
+employeeSchema.pre("validate", function () {
+  if (this.credentials) {
+    // Normalize OTHER_STAFF to STAFF
+    if (this.credentials.role === "OTHER_STAFF") {
+      this.credentials.role = "STAFF";
+    }
+
+    // Normalize spelling variant MONTESSORY -> MONTESSORI
+    if (this.credentials.subCategory === "MONTESSORY") {
+      this.credentials.subCategory = "MONTESSORI";
+    }
+
+    // Teacher role strictly requires a subCategory
+    if (this.credentials.role === "TEACHER") {
+      if (!this.credentials.subCategory) {
+        this.invalidate(
+          "credentials.subCategory",
+          "Sub-category is required for Teacher (MONTESSORI, PRIMARY, MIDDLE, HIGH, COLLEGE)."
+        );
+      }
+    } else {
+      // Non-teacher accounts (Admin, Staff) don't have sub-categories
+      this.credentials.subCategory = null;
+    }
+  }
+});
+
+/**
+ * =========================================================================
+ * Compound Unique Index for Education EMS
+ * =========================================================================
+ * Guarantees uniqueness for (role + subCategory + assignedNumber).
+ * E.g.:
+ * - (ADMIN, null, 101) is unique
+ * - (STAFF, null, 101) is unique
+ * - (TEACHER, PRIMARY, 101) is unique
+ * - (TEACHER, HIGH, 101) is unique
+ */
+employeeSchema.index(
+  {
+    "credentials.role": 1,
+    "credentials.subCategory": 1,
+    "credentials.assignedNumber": 1,
+  },
+  { unique: true }
 );
 
 /**

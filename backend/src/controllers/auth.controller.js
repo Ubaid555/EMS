@@ -11,29 +11,93 @@ import {
 import { cookieOptions } from "../config/cookie.config.js";
 import env from "../config/env.config.js";
 
+/**
+ * Register New Employee Account
+ * POST /api/v1/auth/register
+ */
 export const registerEmployee = asyncHandler(async (req, res) => {
-  // Extract data from request body (support nested credentials or flat payload)
-  const email = (req.body.credentials?.email || req.body.email || "").trim();
-  const password = req.body.credentials?.password || req.body.password || "";
+  // Extract inputs (support both flat and nested credentials payload)
+  const roleRaw = req.body.credentials?.role || req.body.role;
+  const subCategoryRaw =
+    req.body.credentials?.subCategory || req.body.subCategory;
+  const assignedNumberRaw =
+    req.body.credentials?.assignedNumber || req.body.assignedNumber;
+  const emailRaw = req.body.credentials?.email || req.body.email;
+  const password = req.body.credentials?.password || req.body.password;
 
-  // Validate required fields
-  if (!email || !password) {
-    throw new ApiError(400, "Email and password are required.");
+  if (!roleRaw) {
+    throw new ApiError(400, "Role is required (ADMIN, TEACHER, or STAFF).");
   }
 
-  // Check if employee already exists
+  let role = String(roleRaw).trim().toUpperCase();
+  if (role === "OTHER_STAFF") role = "STAFF";
+
+  if (!["ADMIN", "TEACHER", "STAFF"].includes(role)) {
+    throw new ApiError(400, "Invalid role. Must be ADMIN, TEACHER, or STAFF.");
+  }
+
+  let subCategory = null;
+  if (role === "TEACHER") {
+    if (!subCategoryRaw) {
+      throw new ApiError(
+        400,
+        "Sub-category is required for Teacher (MONTESSORI, PRIMARY, MIDDLE, HIGH, COLLEGE)."
+      );
+    }
+    subCategory = String(subCategoryRaw).trim().toUpperCase();
+    if (subCategory === "MONTESSORY") subCategory = "MONTESSORI";
+
+    const allowedSubCategories = [
+      "MONTESSORI",
+      "PRIMARY",
+      "MIDDLE",
+      "HIGH",
+      "COLLEGE",
+    ];
+    if (!allowedSubCategories.includes(subCategory)) {
+      throw new ApiError(
+        400,
+        `Invalid sub-category for Teacher. Allowed values: ${allowedSubCategories.join(", ")}`
+      );
+    }
+  }
+
+  if (!assignedNumberRaw || String(assignedNumberRaw).trim() === "") {
+    throw new ApiError(400, "Assigned number is required.");
+  }
+  const assignedNumber = String(assignedNumberRaw).trim();
+
+  if (!password || String(password).length < 8) {
+    throw new ApiError(
+      400,
+      "Password is required and must be at least 8 characters long."
+    );
+  }
+
+  const email = emailRaw ? String(emailRaw).trim().toLowerCase() : "";
+
+  // Check if an employee with the exact role + subCategory + assignedNumber already exists
   const existingEmployee = await Employee.findOne({
-    "credentials.email": email.toLowerCase(),
+    "credentials.role": role,
+    "credentials.subCategory": subCategory,
+    "credentials.assignedNumber": assignedNumber,
   });
 
   if (existingEmployee) {
-    throw new ApiError(409, "Email is already registered.");
+    const roleDesc = role === "TEACHER" ? `Teacher (${subCategory})` : role;
+    throw new ApiError(
+      409,
+      `An employee with ${roleDesc} and assigned number '${assignedNumber}' is already registered.`
+    );
   }
 
   // Create new employee
   const employee = await Employee.create({
     credentials: {
-      email: email.toLowerCase(),
+      role,
+      subCategory,
+      assignedNumber,
+      email,
       password,
     },
   });
@@ -41,7 +105,6 @@ export const registerEmployee = asyncHandler(async (req, res) => {
   // Generate tokens & set cookies
   const { accessToken } = await generateTokensAndSetCookies(employee, res);
 
-  // Send success response
   return res
     .status(201)
     .json(
@@ -56,37 +119,79 @@ export const registerEmployee = asyncHandler(async (req, res) => {
     );
 });
 
+/**
+ * Login Employee Account
+ * POST /api/v1/auth/login
+ */
 export const loginEmployee = asyncHandler(async (req, res) => {
-  // Extract request body (support nested credentials or flat payload)
-  const email = (req.body.credentials?.email || req.body.email || "").trim();
-  const password = req.body.credentials?.password || req.body.password || "";
+  // Extract inputs (support both flat and nested credentials payload)
+  const roleRaw = req.body.credentials?.role || req.body.role;
+  const subCategoryRaw =
+    req.body.credentials?.subCategory || req.body.subCategory;
+  const assignedNumberRaw =
+    req.body.credentials?.assignedNumber || req.body.assignedNumber;
+  const password = req.body.credentials?.password || req.body.password;
 
-  // Validate input
-  if (!email || !password) {
-    throw new ApiError(400, "Email and password are required.");
+  if (!roleRaw) {
+    throw new ApiError(
+      400,
+      "Role selector is required (ADMIN, TEACHER, or STAFF)."
+    );
   }
 
-  // Find employee and include hidden fields
-  const employee = await Employee.findOne({
-    "credentials.email": email.toLowerCase(),
-  }).select("+credentials.password +refreshToken");
+  let role = String(roleRaw).trim().toUpperCase();
+  if (role === "OTHER_STAFF") role = "STAFF";
 
-  // Employee not found
+  if (!["ADMIN", "TEACHER", "STAFF"].includes(role)) {
+    throw new ApiError(400, "Invalid role. Must be ADMIN, TEACHER, or STAFF.");
+  }
+
+  let subCategory = null;
+  if (role === "TEACHER") {
+    if (!subCategoryRaw) {
+      throw new ApiError(
+        400,
+        "Sub-category is required for Teacher login (MONTESSORI, PRIMARY, MIDDLE, HIGH, COLLEGE)."
+      );
+    }
+    subCategory = String(subCategoryRaw).trim().toUpperCase();
+    if (subCategory === "MONTESSORY") subCategory = "MONTESSORI";
+  }
+
+  if (!assignedNumberRaw || String(assignedNumberRaw).trim() === "") {
+    throw new ApiError(400, "Assigned number is required.");
+  }
+  const assignedNumber = String(assignedNumberRaw).trim();
+
+  if (!password) {
+    throw new ApiError(400, "Password is required.");
+  }
+
+  // Build query: match role, subCategory, and assignedNumber
+  const query = {
+    "credentials.role": role,
+    "credentials.subCategory": subCategory,
+    "credentials.assignedNumber": assignedNumber,
+  };
+
+  // Find employee and include hidden password & refreshToken
+  const employee = await Employee.findOne(query).select(
+    "+credentials.password +refreshToken"
+  );
+
   if (!employee) {
-    throw new ApiError(401, "Invalid email or password.");
+    throw new ApiError(401, "Invalid credentials or assigned number.");
   }
 
   // Verify password
   const isPasswordCorrect = await employee.comparePassword(password);
-
   if (!isPasswordCorrect) {
-    throw new ApiError(401, "Invalid email or password.");
+    throw new ApiError(401, "Invalid credentials or assigned number.");
   }
 
   // Generate new access & refresh tokens
   const { accessToken } = await generateTokensAndSetCookies(employee, res);
 
-  // Send response
   return res
     .status(200)
     .json(

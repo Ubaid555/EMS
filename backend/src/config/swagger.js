@@ -106,7 +106,7 @@ export const swaggerDocument = {
     "/api/v1/auth/register": {
       post: {
         tags: ["Auth"],
-        summary: "Register New Employee",
+        summary: "Register New Employee Account (Role + Assigned Number flow)",
         security: [],
         requestBody: {
           required: true,
@@ -114,10 +114,35 @@ export const swaggerDocument = {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["email", "password"],
+                required: ["role", "assignedNumber", "password"],
                 properties: {
-                  email: { type: "string", example: "employee@ems.com" },
-                  password: { type: "string", example: "SecurePass123!" },
+                  role: {
+                    type: "string",
+                    enum: ["ADMIN", "TEACHER", "STAFF", "OTHER_STAFF"],
+                    example: "TEACHER",
+                    description: "Main employee category",
+                  },
+                  subCategory: {
+                    type: "string",
+                    enum: ["MONTESSORI", "PRIMARY", "MIDDLE", "HIGH", "COLLEGE"],
+                    example: "PRIMARY",
+                    description: "Required when role is TEACHER. Montessori, Primary, Middle, High, College.",
+                  },
+                  assignedNumber: {
+                    type: "string",
+                    example: "2001",
+                    description: "Assigned employee / teacher / staff number",
+                  },
+                  email: {
+                    type: "string",
+                    example: "teacher.primary@school.edu",
+                    description: "Employee email address (non-unique)",
+                  },
+                  password: {
+                    type: "string",
+                    example: "SecurePass123!",
+                    description: "Password (min 8 characters)",
+                  },
                 },
               },
             },
@@ -125,7 +150,8 @@ export const swaggerDocument = {
         },
         responses: {
           201: { description: "Employee registered successfully" },
-          409: { description: "Email already registered" },
+          400: { description: "Validation error (e.g. missing subCategory for Teacher)" },
+          409: { description: "Employee with this role/subCategory and assigned number already exists" },
         },
       },
     },
@@ -133,7 +159,7 @@ export const swaggerDocument = {
     "/api/v1/auth/login": {
       post: {
         tags: ["Auth"],
-        summary: "Login Employee",
+        summary: "Login Employee Account (Selector + Assigned Number + Password)",
         security: [],
         requestBody: {
           required: true,
@@ -141,10 +167,29 @@ export const swaggerDocument = {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["email", "password"],
+                required: ["role", "assignedNumber", "password"],
                 properties: {
-                  email: { type: "string", example: "employee@ems.com" },
-                  password: { type: "string", example: "SecurePass123!" },
+                  role: {
+                    type: "string",
+                    enum: ["ADMIN", "TEACHER", "STAFF", "OTHER_STAFF"],
+                    example: "TEACHER",
+                    description: "Role selector (Admin, Teacher, Staff)",
+                  },
+                  subCategory: {
+                    type: "string",
+                    enum: ["MONTESSORI", "PRIMARY", "MIDDLE", "HIGH", "COLLEGE"],
+                    example: "PRIMARY",
+                    description: "Sub-category selector (Required for Teacher)",
+                  },
+                  assignedNumber: {
+                    type: "string",
+                    example: "2001",
+                    description: "Assigned identification number",
+                  },
+                  password: {
+                    type: "string",
+                    example: "SecurePass123!",
+                  },
                 },
               },
             },
@@ -152,7 +197,8 @@ export const swaggerDocument = {
         },
         responses: {
           200: { description: "Login successful; cookies set & token returned" },
-          401: { description: "Invalid credentials" },
+          400: { description: "Missing required role, subCategory or assignedNumber" },
+          401: { description: "Invalid role, assigned number, or password" },
         },
       },
     },

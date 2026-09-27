@@ -247,7 +247,10 @@ export const getSingleHistory = async (
   return await paginateQuery(Model, baseFilter, queryParams, {
     defaultSortBy: "version",
     defaultSortOrder: "desc",
-    populate: { path: "changedBy", select: "credentials.email" },
+    populate: {
+      path: "changedBy",
+      select: "credentials.role credentials.subCategory credentials.assignedNumber credentials.email",
+    },
     ...options,
   });
 };
@@ -393,7 +396,10 @@ export const getMultiItemHistory = async (
   return await paginateQuery(Model, baseFilter, queryParams, {
     defaultSortBy: "version",
     defaultSortOrder: "desc",
-    populate: { path: "changedBy", select: "credentials.email" },
+    populate: {
+      path: "changedBy",
+      select: "credentials.role credentials.subCategory credentials.assignedNumber credentials.email",
+    },
     ...options,
   });
 };
@@ -412,7 +418,10 @@ export const getMultiAllHistory = async (
   return await paginateQuery(Model, baseFilter, queryParams, {
     defaultSortBy: "createdAt",
     defaultSortOrder: "desc",
-    populate: { path: "changedBy", select: "credentials.email" },
+    populate: {
+      path: "changedBy",
+      select: "credentials.role credentials.subCategory credentials.assignedNumber credentials.email",
+    },
     ...options,
   });
 };
