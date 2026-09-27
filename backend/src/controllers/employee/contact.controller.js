@@ -17,15 +17,35 @@ import {
  */
 
 /**
- * Fetch all currently active contact records for authenticated employee
+ * Fetch all currently active contact records for authenticated employee (paginated & searchable)
  * GET /api/v1/employee/contacts
  */
 export const getContacts = asyncHandler(async (req, res) => {
-  const contacts = await getMultiActive(EmployeeContact, req.employee._id);
+  const { data, pagination } = await getMultiActive(
+    EmployeeContact,
+    req.employee._id,
+    req.query,
+    {
+      defaultSearchFields: [
+        "platform",
+        "value",
+        "contactNumber",
+        "setName",
+        "notes",
+        "officeNumber",
+        "mobileNumber",
+        "permanentResidenceNumber",
+        "presentResidenceNumber",
+        "otherNumber",
+        "category",
+        "phoneType",
+      ],
+    }
+  );
 
   return res
     .status(200)
-    .json(new ApiResponse(200, contacts, "Active contacts fetched successfully."));
+    .json(new ApiResponse(200, data, "Active contacts fetched successfully.", pagination));
 });
 
 /**
@@ -81,35 +101,61 @@ export const deleteContact = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get chronological audit version history for a single contact item (e.g. Phone V1 -> V2)
+ * Get chronological audit version history for a single contact item (paginated & searchable)
  * GET /api/v1/employee/contacts/:id/history
  */
 export const getContactHistory = asyncHandler(async (req, res) => {
-  const history = await getMultiItemHistory(
+  const { data, pagination } = await getMultiItemHistory(
     EmployeeContact,
     req.employee._id,
-    req.params.id
+    req.params.id,
+    req.query,
+    {
+      defaultSearchFields: [
+        "platform",
+        "value",
+        "contactNumber",
+        "setName",
+        "notes",
+        "actionType",
+      ],
+    }
   );
 
   return res
     .status(200)
-    .json(new ApiResponse(200, history, "Contact item version history retrieved."));
+    .json(new ApiResponse(200, data, "Contact item version history retrieved.", pagination));
 });
 
 /**
- * Get full chronological audit timeline of all contact changes for this employee
+ * Get full chronological audit timeline of all contact changes for this employee (paginated & searchable)
  * GET /api/v1/employee/contacts/history/all
  */
 export const getAllContactsHistory = asyncHandler(async (req, res) => {
-  const history = await getMultiAllHistory(EmployeeContact, req.employee._id);
+  const { data, pagination } = await getMultiAllHistory(
+    EmployeeContact,
+    req.employee._id,
+    req.query,
+    {
+      defaultSearchFields: [
+        "platform",
+        "value",
+        "contactNumber",
+        "setName",
+        "notes",
+        "actionType",
+      ],
+    }
+  );
 
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        history,
-        "All contacts chronological audit history retrieved."
+        data,
+        "All contacts chronological audit history retrieved.",
+        pagination
       )
     );
 });

@@ -23,6 +23,44 @@ export const swaggerDocument = {
         description: "Enter your JWT access token (obtained from /api/v1/auth/login)",
       },
     },
+    parameters: {
+      pageParam: {
+        name: "page",
+        in: "query",
+        description: "Page number (defaults to 1)",
+        schema: { type: "integer", default: 1, minimum: 1 },
+      },
+      limitParam: {
+        name: "limit",
+        in: "query",
+        description: "Number of records per page (default: 10, max: 100). Send 'all' to disable limit.",
+        schema: { type: "string", default: "10" },
+      },
+      searchParam: {
+        name: "search",
+        in: "query",
+        description: "Case-insensitive search query string",
+        schema: { type: "string" },
+      },
+      searchFieldsParam: {
+        name: "searchFields",
+        in: "query",
+        description: "Comma-separated list of fields to search across (e.g. 'name,notes')",
+        schema: { type: "string" },
+      },
+      sortByParam: {
+        name: "sortBy",
+        in: "query",
+        description: "Field name to sort results by (default: 'createdAt' or 'version')",
+        schema: { type: "string" },
+      },
+      sortOrderParam: {
+        name: "sortOrder",
+        in: "query",
+        description: "Sort direction ('asc' or 'desc', defaults to 'desc')",
+        schema: { type: "string", enum: ["asc", "desc"], default: "desc" },
+      },
+    },
   },
   security: [{ bearerAuth: [] }],
   tags: [
@@ -379,9 +417,17 @@ export const swaggerDocument = {
     "/api/v1/employee/basic-info/history": {
       get: {
         tags: ["Employee - Basic Info"],
-        summary: "Get Full SCD Type 2 Audit History for Basic Info",
+        summary: "Get Full SCD Type 2 Audit History for Basic Info (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
         responses: {
-          200: { description: "Chronological version history" },
+          200: { description: "Chronological version history with pagination metadata" },
         },
       },
     },
@@ -430,9 +476,17 @@ export const swaggerDocument = {
     "/api/v1/employee/cnic/history": {
       get: {
         tags: ["Employee - CNIC"],
-        summary: "Get Full SCD Type 2 Audit History for CNIC",
+        summary: "Get Full SCD Type 2 Audit History for CNIC (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
         responses: {
-          200: { description: "CNIC version history" },
+          200: { description: "CNIC version history with pagination metadata" },
         },
       },
     },
@@ -443,9 +497,17 @@ export const swaggerDocument = {
     "/api/v1/employee/languages": {
       get: {
         tags: ["Employee - Languages"],
-        summary: "Get All Currently Active Languages for Authenticated Employee",
+        summary: "Get All Currently Active Languages for Authenticated Employee (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
         responses: {
-          200: { description: "Array of active languages" },
+          200: { description: "Array of active languages with pagination metadata" },
         },
       },
       post: {
@@ -537,7 +599,7 @@ export const swaggerDocument = {
     "/api/v1/employee/languages/{id}/history": {
       get: {
         tags: ["Employee - Languages"],
-        summary: "Get Version History for a Specific Language Item (e.g. English V1 -> V2)",
+        summary: "Get Version History for a Specific Language Item (e.g. English V1 -> V2) (Paginated & Searchable)",
         parameters: [
           {
             name: "id",
@@ -546,9 +608,15 @@ export const swaggerDocument = {
             schema: { type: "string" },
             description: "Language record _id",
           },
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
         ],
         responses: {
-          200: { description: "Item audit timeline" },
+          200: { description: "Item audit timeline with pagination metadata" },
         },
       },
     },
@@ -556,9 +624,17 @@ export const swaggerDocument = {
     "/api/v1/employee/languages/history/all": {
       get: {
         tags: ["Employee - Languages"],
-        summary: "Get Full Chronological Log of ALL Language Activities for Employee",
+        summary: "Get Full Chronological Log of ALL Language Activities for Employee (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
         responses: {
-          200: { description: "Full chronological event stream" },
+          200: { description: "Full chronological event stream with pagination metadata" },
         },
       },
     },
@@ -569,9 +645,17 @@ export const swaggerDocument = {
     "/api/v1/employee/contacts": {
       get: {
         tags: ["Employee - Contacts"],
-        summary: "Get All Currently Active Contacts for Authenticated Employee",
+        summary: "Get All Currently Active Contacts for Authenticated Employee (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
         responses: {
-          200: { description: "Array of active contacts (Social Media, Emergency, Phone)" },
+          200: { description: "Array of active contacts (Social Media, Emergency, Phone) with pagination metadata" },
         },
       },
       post: {
@@ -713,7 +797,7 @@ export const swaggerDocument = {
     "/api/v1/employee/contacts/{id}/history": {
       get: {
         tags: ["Employee - Contacts"],
-        summary: "Get Version History for a Specific Contact Item (e.g. Phone V1 -> V2)",
+        summary: "Get Version History for a Specific Contact Item (e.g. Phone V1 -> V2) (Paginated & Searchable)",
         parameters: [
           {
             name: "id",
@@ -722,9 +806,15 @@ export const swaggerDocument = {
             schema: { type: "string" },
             description: "Contact record _id",
           },
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
         ],
         responses: {
-          200: { description: "Contact item audit timeline" },
+          200: { description: "Contact item audit timeline with pagination metadata" },
         },
       },
     },
@@ -732,9 +822,17 @@ export const swaggerDocument = {
     "/api/v1/employee/contacts/history/all": {
       get: {
         tags: ["Employee - Contacts"],
-        summary: "Get Full Chronological Log of ALL Contact Activities for Employee",
+        summary: "Get Full Chronological Log of ALL Contact Activities for Employee (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
         responses: {
-          200: { description: "Full chronological event stream" },
+          200: { description: "Full chronological event stream with pagination metadata" },
         },
       },
     },
@@ -836,9 +934,17 @@ export const swaggerDocument = {
     "/api/v1/employee/addresses/permanent/history": {
       get: {
         tags: ["Employee - Addresses"],
-        summary: "Get Full SCD Type 2 Audit History for Permanent Address",
+        summary: "Get Full SCD Type 2 Audit History for Permanent Address (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
         responses: {
-          200: { description: "Permanent address version timeline" },
+          200: { description: "Permanent address version timeline with pagination metadata" },
         },
       },
     },
@@ -915,9 +1021,17 @@ export const swaggerDocument = {
     "/api/v1/employee/addresses/present/history": {
       get: {
         tags: ["Employee - Addresses"],
-        summary: "Get Full SCD Type 2 Audit History for Present Address",
+        summary: "Get Full SCD Type 2 Audit History for Present Address (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
         responses: {
-          200: { description: "Present address version timeline" },
+          200: { description: "Present address version timeline with pagination metadata" },
         },
       },
     },

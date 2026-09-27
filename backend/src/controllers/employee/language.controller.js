@@ -4,18 +4,28 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import versionedCrud from "../../services/versionedCrud.service.js";
 
 /**
- * Get all active languages for the authenticated employee
+ * Get all active languages for the authenticated employee (paginated & searchable)
  * GET /api/v1/employee/languages
  */
 export const getLanguages = asyncHandler(async (req, res) => {
-  const data = await versionedCrud.getMultiActive(
+  const { data, pagination } = await versionedCrud.getMultiActive(
     EmployeeLanguage,
-    req.employee._id
+    req.employee._id,
+    req.query,
+    {
+      defaultSearchFields: [
+        "name",
+        "notes",
+        "speakingLevel",
+        "readingLevel",
+        "writingLevel",
+      ],
+    }
   );
 
   return res
     .status(200)
-    .json(new ApiResponse(200, data, "Languages retrieved successfully."));
+    .json(new ApiResponse(200, data, "Languages retrieved successfully.", pagination));
 });
 
 /**
@@ -71,32 +81,40 @@ export const deleteLanguage = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get version history of a specific language item
+ * Get version history of a specific language item (paginated & searchable)
  * GET /api/v1/employee/languages/:id/history
  */
 export const getLanguageItemHistory = asyncHandler(async (req, res) => {
-  const history = await versionedCrud.getMultiItemHistory(
+  const { data, pagination } = await versionedCrud.getMultiItemHistory(
     EmployeeLanguage,
     req.employee._id,
-    req.params.id
+    req.params.id,
+    req.query,
+    {
+      defaultSearchFields: ["name", "notes", "actionType"],
+    }
   );
 
   return res
     .status(200)
-    .json(new ApiResponse(200, history, "Language item history retrieved successfully."));
+    .json(new ApiResponse(200, data, "Language item history retrieved successfully.", pagination));
 });
 
 /**
- * Get full chronological history of all language changes for the employee
+ * Get full chronological history of all language changes for the employee (paginated & searchable)
  * GET /api/v1/employee/languages/history/all
  */
 export const getAllLanguagesHistory = asyncHandler(async (req, res) => {
-  const history = await versionedCrud.getMultiAllHistory(
+  const { data, pagination } = await versionedCrud.getMultiAllHistory(
     EmployeeLanguage,
-    req.employee._id
+    req.employee._id,
+    req.query,
+    {
+      defaultSearchFields: ["name", "notes", "actionType"],
+    }
   );
 
   return res
     .status(200)
-    .json(new ApiResponse(200, history, "Full language audit history retrieved successfully."));
+    .json(new ApiResponse(200, data, "Full language audit history retrieved successfully.", pagination));
 });

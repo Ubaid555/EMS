@@ -36,16 +36,21 @@ export const updateBasicInfo = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get full audit history for Basic Info
+ * Get full audit history for Basic Info (paginated & searchable)
  * GET /api/v1/employee/basic-info/history
  */
 export const getBasicInfoHistory = asyncHandler(async (req, res) => {
-  const history = await versionedCrud.getSingleHistory(
+  const { data, pagination } = await versionedCrud.getSingleHistory(
     EmployeeBasicInfo,
-    req.employee._id
+    req.employee._id,
+    req.query,
+    {
+      defaultSearchFields: ["title", "notes", "actionType"],
+    }
   );
 
   return res
     .status(200)
-    .json(new ApiResponse(200, history, "Basic info history retrieved successfully."));
+    .json(new ApiResponse(200, data, "Basic info history retrieved successfully.", pagination));
 });
+

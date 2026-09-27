@@ -76,19 +76,27 @@ export const savePermanentAddress = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get chronological audit history of Permanent Address
+ * Get chronological audit history of Permanent Address (paginated & searchable)
  * GET /api/v1/employee/addresses/permanent/history
  */
 export const getPermanentHistory = asyncHandler(async (req, res) => {
-  const history = await getSingleHistory(PermanentAddress, req.employee._id);
+  const { data, pagination } = await getSingleHistory(
+    PermanentAddress,
+    req.employee._id,
+    req.query,
+    {
+      defaultSearchFields: ["addressLine", "street", "postOffice", "actionType"],
+    }
+  );
 
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        history,
-        "Permanent address audit history retrieved."
+        data,
+        "Permanent address audit history retrieved.",
+        pagination
       )
     );
 });
@@ -178,19 +186,33 @@ export const savePresentAddress = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get chronological audit history of Present Address
+ * Get chronological audit history of Present Address (paginated & searchable)
  * GET /api/v1/employee/addresses/present/history
  */
 export const getPresentHistory = asyncHandler(async (req, res) => {
-  const history = await getSingleHistory(PresentAddress, req.employee._id);
+  const { data, pagination } = await getSingleHistory(
+    PresentAddress,
+    req.employee._id,
+    req.query,
+    {
+      defaultSearchFields: [
+        "addressLine",
+        "foreignAddress",
+        "street",
+        "telegraphOffice",
+        "actionType",
+      ],
+    }
+  );
 
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        history,
-        "Present address audit history retrieved."
+        data,
+        "Present address audit history retrieved.",
+        pagination
       )
     );
 });

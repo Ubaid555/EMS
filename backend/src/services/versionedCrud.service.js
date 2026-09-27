@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import ApiError from "../utils/ApiError.js";
+import { paginateQuery } from "../utils/queryHelper.js";
 
 /**
  * =========================================================================
@@ -233,13 +234,22 @@ export const deleteSingle = async (Model, employeeId, changedBy) => {
 };
 
 /**
- * Retrieve chronological audit history for a single-entity record
+ * Retrieve chronological audit history for a single-entity record (paginated & searchable)
  */
-export const getSingleHistory = async (Model, employeeId) => {
-  return await Model.find({ employeeId })
-    .sort({ version: -1 })
-    .populate("changedBy", "credentials.email")
-    .lean();
+export const getSingleHistory = async (
+  Model,
+  employeeId,
+  queryParams = {},
+  options = {}
+) => {
+  const baseFilter = { employeeId };
+
+  return await paginateQuery(Model, baseFilter, queryParams, {
+    defaultSortBy: "version",
+    defaultSortOrder: "desc",
+    populate: { path: "changedBy", select: "credentials.email" },
+    ...options,
+  });
 };
 
 // -------------------------------------------------------------------------
@@ -247,16 +257,25 @@ export const getSingleHistory = async (Model, employeeId) => {
 // -------------------------------------------------------------------------
 
 /**
- * Fetch all currently active items for an employee (e.g. all active languages)
+ * Fetch all currently active items for an employee (paginated & searchable)
  */
-export const getMultiActive = async (Model, employeeId) => {
-  return await Model.find({
+export const getMultiActive = async (
+  Model,
+  employeeId,
+  queryParams = {},
+  options = {}
+) => {
+  const baseFilter = {
     employeeId,
     isCurrent: true,
     isDeleted: false,
-  })
-    .sort({ createdAt: -1 })
-    .lean();
+  };
+
+  return await paginateQuery(Model, baseFilter, queryParams, {
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+    ...options,
+  });
 };
 
 /**
@@ -354,29 +373,48 @@ export const deleteMulti = async (Model, employeeId, itemId, changedBy) => {
 };
 
 /**
- * Retrieve version history of a single item (e.g. English V1 -> V2)
+ * Retrieve version history of a single item (e.g. English V1 -> V2) (paginated & searchable)
  */
-export const getMultiItemHistory = async (Model, employeeId, itemIdOrRootId) => {
+export const getMultiItemHistory = async (
+  Model,
+  employeeId,
+  itemIdOrRootId,
+  queryParams = {},
+  options = {}
+) => {
   const refItem = await Model.findById(itemIdOrRootId);
   const rootId = refItem?.rootRecordId || itemIdOrRootId;
 
-  return await Model.find({
+  const baseFilter = {
     employeeId,
     rootRecordId: rootId,
-  })
-    .sort({ version: -1 })
-    .populate("changedBy", "credentials.email")
-    .lean();
+  };
+
+  return await paginateQuery(Model, baseFilter, queryParams, {
+    defaultSortBy: "version",
+    defaultSortOrder: "desc",
+    populate: { path: "changedBy", select: "credentials.email" },
+    ...options,
+  });
 };
 
 /**
- * Retrieve the full chronological audit history of all actions in this collection
+ * Retrieve the full chronological audit history of all actions in this collection (paginated & searchable)
  */
-export const getMultiAllHistory = async (Model, employeeId) => {
-  return await Model.find({ employeeId })
-    .sort({ createdAt: -1 })
-    .populate("changedBy", "credentials.email")
-    .lean();
+export const getMultiAllHistory = async (
+  Model,
+  employeeId,
+  queryParams = {},
+  options = {}
+) => {
+  const baseFilter = { employeeId };
+
+  return await paginateQuery(Model, baseFilter, queryParams, {
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+    populate: { path: "changedBy", select: "credentials.email" },
+    ...options,
+  });
 };
 
 export default {

@@ -36,16 +36,21 @@ export const updateCnic = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get full audit history for CNIC
+ * Get full audit history for CNIC (paginated & searchable)
  * GET /api/v1/employee/cnic/history
  */
 export const getCnicHistory = asyncHandler(async (req, res) => {
-  const history = await versionedCrud.getSingleHistory(
+  const { data, pagination } = await versionedCrud.getSingleHistory(
     EmployeeCnic,
-    req.employee._id
+    req.employee._id,
+    req.query,
+    {
+      defaultSearchFields: ["cnicNumber", "actionType"],
+    }
   );
 
   return res
     .status(200)
-    .json(new ApiResponse(200, history, "CNIC history retrieved successfully."));
+    .json(new ApiResponse(200, data, "CNIC history retrieved successfully.", pagination));
 });
+
