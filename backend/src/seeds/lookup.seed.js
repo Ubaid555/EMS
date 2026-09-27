@@ -38,9 +38,9 @@ export const initialLookups = [
   { category: "CONTACT_CATEGORY", code: "PHONE", label: "Contact Number", sortOrder: 3 },
 
   // PHONE_TYPE
-  { category: "PHONE_TYPE", code: "PTCL", label: "PTCL", sortOrder: 1 },
-  { category: "PHONE_TYPE", code: "WORK", label: "Work", sortOrder: 2 },
-  { category: "PHONE_TYPE", code: "MOBILE_SET", label: "Mobile", sortOrder: 3 },
+  { category: "PHONE_TYPE", code: "MOBILE", label: "Mobile", sortOrder: 1 },
+  { category: "PHONE_TYPE", code: "PTCL", label: "PTCL", sortOrder: 2 },
+  { category: "PHONE_TYPE", code: "VPTCL", label: "V-PTCL (Wireless PTCL)", sortOrder: 3 },
 
   // SOCIAL_PLATFORM
   { category: "SOCIAL_PLATFORM", code: "EMAIL", label: "Email", sortOrder: 1 },
@@ -48,7 +48,8 @@ export const initialLookups = [
   { category: "SOCIAL_PLATFORM", code: "FACEBOOK", label: "Facebook", sortOrder: 3 },
   { category: "SOCIAL_PLATFORM", code: "LINKEDIN", label: "LinkedIn", sortOrder: 4 },
   { category: "SOCIAL_PLATFORM", code: "TWITTER", label: "Twitter / X", sortOrder: 5 },
-  { category: "SOCIAL_PLATFORM", code: "OTHER", label: "Other", sortOrder: 6 },
+  { category: "SOCIAL_PLATFORM", code: "INSTAGRAM", label: "Instagram", sortOrder: 6 },
+  { category: "SOCIAL_PLATFORM", code: "OTHER", label: "Other", sortOrder: 7 },
 
   // EMERGENCY_TYPE
   { category: "EMERGENCY_TYPE", code: "OFFICE", label: "Office", sortOrder: 1 },

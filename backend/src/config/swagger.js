@@ -31,6 +31,7 @@ export const swaggerDocument = {
     { name: "Employee - Basic Info", description: "Form 1: Basic Personal Profile (SCD Type 2 Versioned)" },
     { name: "Employee - CNIC", description: "Form 2: National Identity (SCD Type 2 Versioned)" },
     { name: "Employee - Languages", description: "Form 4: Language Proficiencies (Multi-Entity SCD2)" },
+    { name: "Employee - Contacts", description: "Form 9: Polymorphic Contacts (Social Media, Emergency, Phone) (Multi-Entity SCD2)" },
     { name: "System Health", description: "API Status & Liveness" },
   ],
   paths: {
@@ -555,6 +556,182 @@ export const swaggerDocument = {
       get: {
         tags: ["Employee - Languages"],
         summary: "Get Full Chronological Log of ALL Language Activities for Employee",
+        responses: {
+          200: { description: "Full chronological event stream" },
+        },
+      },
+    },
+
+    // ----------------------------------------------------
+    // EMPLOYEE: CONTACTS (FORM 9 - POLYMORPHIC MULTI-ENTITY)
+    // ----------------------------------------------------
+    "/api/v1/employee/contacts": {
+      get: {
+        tags: ["Employee - Contacts"],
+        summary: "Get All Currently Active Contacts for Authenticated Employee",
+        responses: {
+          200: { description: "Array of active contacts (Social Media, Emergency, Phone)" },
+        },
+      },
+      post: {
+        tags: ["Employee - Contacts"],
+        summary: "Add a New Contact Record (Social Media, Emergency Contact, or Phone with IMEI)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["category"],
+                properties: {
+                  category: {
+                    type: "string",
+                    enum: ["SOCIAL_MEDIA", "EMERGENCY", "PHONE"],
+                    example: "PHONE",
+                  },
+                  socialMedia: {
+                    type: "object",
+                    properties: {
+                      platform: { type: "string", example: "WHATSAPP" },
+                      value: { type: "string", example: "+923001234567" },
+                    },
+                  },
+                  emergency: {
+                    type: "object",
+                    description: "At least 1 of the 5 contact numbers is required",
+                    properties: {
+                      officeNumber: { type: "string", example: "042-35889901" },
+                      permanentResidenceNumber: { type: "string", example: "042-35889902" },
+                      presentResidenceNumber: { type: "string", example: "042-35889903" },
+                      mobileNumber: { type: "string", example: "0300-1234567" },
+                      otherNumber: { type: "string", example: "0321-7654321" },
+                      contactPersonName: { type: "string", example: "Tariq Mahmood" },
+                      relation: { type: "string", example: "Brother" },
+                    },
+                  },
+                  phone: {
+                    type: "object",
+                    properties: {
+                      isOfficial: { type: "boolean", example: true },
+                      isActive: { type: "boolean", example: true },
+                      contactNumber: { type: "string", example: "0300-9876543" },
+                      phoneType: { type: "string", enum: ["MOBILE", "PTCL", "VPTCL"], example: "MOBILE" },
+                      mobileDevice: {
+                        type: "object",
+                        description: "Required when phoneType is MOBILE",
+                        properties: {
+                          setName: { type: "string", example: "iPhone 15 Pro" },
+                          imeiNumber: { type: "string", example: "356938035643809" },
+                          make: { type: "string", example: "Apple" },
+                          modelType: { type: "string", example: "A3106" },
+                        },
+                      },
+                    },
+                  },
+                  notes: { type: "string", example: "Primary corporate mobile line" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Contact record created (Version 1, rootRecordId initialized)" },
+          400: { description: "Validation failure (Zod / Lookup)" },
+        },
+      },
+    },
+
+    "/api/v1/employee/contacts/{id}": {
+      put: {
+        tags: ["Employee - Contacts"],
+        summary: "Update Specific Contact (Triggers SCD Type 2 audit versioning)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Contact record _id",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["category"],
+                properties: {
+                  category: { type: "string", enum: ["SOCIAL_MEDIA", "EMERGENCY", "PHONE"], example: "PHONE" },
+                  phone: {
+                    type: "object",
+                    properties: {
+                      isOfficial: { type: "boolean", example: true },
+                      isActive: { type: "boolean", example: true },
+                      contactNumber: { type: "string", example: "0300-9999999" },
+                      phoneType: { type: "string", example: "MOBILE" },
+                      mobileDevice: {
+                        type: "object",
+                        properties: {
+                          setName: { type: "string", example: "iPhone 16 Pro" },
+                          imeiNumber: { type: "string", example: "356938039999999" },
+                          make: { type: "string", example: "Apple" },
+                          modelType: { type: "string", example: "A3200" },
+                        },
+                      },
+                    },
+                  },
+                  notes: { type: "string", example: "Upgraded device to iPhone 16 Pro" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Contact updated with new version" },
+        },
+      },
+      delete: {
+        tags: ["Employee - Contacts"],
+        summary: "Soft-Delete Specific Contact (Inserts audit tombstone)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Contact record _id",
+          },
+        ],
+        responses: {
+          200: { description: "Contact soft-deleted successfully" },
+        },
+      },
+    },
+
+    "/api/v1/employee/contacts/{id}/history": {
+      get: {
+        tags: ["Employee - Contacts"],
+        summary: "Get Version History for a Specific Contact Item (e.g. Phone V1 -> V2)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Contact record _id",
+          },
+        ],
+        responses: {
+          200: { description: "Contact item audit timeline" },
+        },
+      },
+    },
+
+    "/api/v1/employee/contacts/history/all": {
+      get: {
+        tags: ["Employee - Contacts"],
+        summary: "Get Full Chronological Log of ALL Contact Activities for Employee",
         responses: {
           200: { description: "Full chronological event stream" },
         },
