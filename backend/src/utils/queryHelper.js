@@ -58,16 +58,20 @@ export const parsePaginationParams = (queryParams = {}, defaults = {}) => {
 
 /**
  * Constructs a dynamic MongoDB $or search filter across specified or default fields.
+ * Handles both String fields (case-insensitive regex) and Number fields (partial
+ * string match via $toString and exact equality for indexed lookups).
  *
  * @param {object} queryParams - Express req.query object (contains search / q & searchFields)
  * @param {string[]} defaultSearchFields - Model-specific default fields to query if frontend omits searchFields
  * @param {string[]|null} allowedFields - Optional whitelist of allowed searchable fields
+ * @param {import("mongoose").Model|null} Model - Mongoose model to introspect field data types
  * @returns {object} MongoDB query condition (e.g. { $or: [...] } or {})
  */
 export const buildSearchFilter = (
   queryParams = {},
   defaultSearchFields = [],
-  allowedFields = null
+  allowedFields = null,
+  Model = null
 ) => {
   const rawSearch = (queryParams.search || queryParams.q || "").trim();
   if (!rawSearch) return {};
@@ -102,9 +106,53 @@ export const buildSearchFilter = (
 
   if (targetFields.length === 0) return {};
 
-  const regex = new RegExp(escapeRegex(rawSearch), "i");
-  const orConditions = targetFields.map((field) => ({ [field]: regex }));
+  const escaped = escapeRegex(rawSearch);
+  const regex = new RegExp(escaped, "i");
+  const num = Number(rawSearch);
+  const isNum = !isNaN(num) && rawSearch.trim() !== "";
 
+  const orConditions = [];
+
+  for (const field of targetFields) {
+    const pathType = Model?.schema?.path(field)?.instance;
+
+    if (pathType === "Number") {
+      // 1. Partial string match on the numeric field (e.g. "17" matches 175)
+      orConditions.push({
+        $expr: {
+          $regexMatch: {
+            input: { $ifNull: [{ $toString: `$${field}` }, ""] },
+            regex: escaped,
+            options: "i",
+          },
+        },
+      });
+      // 2. Exact numeric equality for indexed B-tree searches
+      if (isNum) {
+        orConditions.push({ [field]: num });
+      }
+    } else if (pathType === "String") {
+      orConditions.push({ [field]: regex });
+    } else {
+      // Untyped or dynamic field (e.g. nested subdocuments or loose schema)
+      // Supports string regex, partial numeric string matching, and exact numeric equality
+      orConditions.push({ [field]: regex });
+      orConditions.push({
+        $expr: {
+          $regexMatch: {
+            input: { $ifNull: [{ $toString: `$${field}` }, ""] },
+            regex: escaped,
+            options: "i",
+          },
+        },
+      });
+      if (isNum) {
+        orConditions.push({ [field]: num });
+      }
+    }
+  }
+
+  if (orConditions.length === 0) return {};
   return orConditions.length === 1 ? orConditions[0] : { $or: orConditions };
 };
 
@@ -141,7 +189,8 @@ export const paginateQuery = async (
   const searchFilter = buildSearchFilter(
     queryParams,
     defaultSearchFields,
-    allowedFields
+    allowedFields,
+    Model
   );
 
   // Merge baseFilter and searchFilter safely
