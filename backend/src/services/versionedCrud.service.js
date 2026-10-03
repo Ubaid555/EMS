@@ -272,6 +272,7 @@ export const getMultiActive = async (
     employeeId,
     isCurrent: true,
     isDeleted: false,
+    ...(options.baseFilter || {}),
   };
 
   return await paginateQuery(Model, baseFilter, queryParams, {
@@ -391,6 +392,7 @@ export const getMultiItemHistory = async (
   const baseFilter = {
     employeeId,
     rootRecordId: rootId,
+    ...(options.baseFilter || {}),
   };
 
   return await paginateQuery(Model, baseFilter, queryParams, {
@@ -413,7 +415,10 @@ export const getMultiAllHistory = async (
   queryParams = {},
   options = {}
 ) => {
-  const baseFilter = { employeeId };
+  const baseFilter = {
+    employeeId,
+    ...(options.baseFilter || {}),
+  };
 
   return await paginateQuery(Model, baseFilter, queryParams, {
     defaultSortBy: "createdAt",

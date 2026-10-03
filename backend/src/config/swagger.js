@@ -71,6 +71,10 @@ export const swaggerDocument = {
     { name: "Employee - Languages", description: "Form 4: Language Proficiencies (Multi-Entity SCD2)" },
     { name: "Employee - Contacts", description: "Form 9: Polymorphic Contacts (Social Media, Emergency, Phone) (Multi-Entity SCD2)" },
     { name: "Employee - Addresses", description: "Form 10: Permanent & Present Residential Addresses (SCD Type 2 Versioned)" },
+    { name: "Finance - Incomes", description: "Finance Module: Standalone Incomes Flow (Multi-Entity SCD2)" },
+    { name: "Finance - Home Expenses", description: "Finance Module: Household & Domestic Expenses Flow (Multi-Entity SCD2)" },
+    { name: "Finance - Other Expenses", description: "Finance Module: Miscellaneous & Other Expenses Flow (Multi-Entity SCD2)" },
+    { name: "Finance - Summary", description: "Finance Module: Consolidated Financial Overview & Net Savings" },
     { name: "System Health", description: "API Status & Liveness" },
   ],
   paths: {
@@ -1078,6 +1082,502 @@ export const swaggerDocument = {
         ],
         responses: {
           200: { description: "Present address version timeline with pagination metadata" },
+        },
+      },
+    },
+
+    // ----------------------------------------------------
+    // FINANCE MODULE - SUMMARY
+    // ----------------------------------------------------
+    "/api/v1/finance/summary": {
+      get: {
+        tags: ["Finance - Summary"],
+        summary: "Get Consolidated Financial Health Summary (Income, Expenses, Net Savings)",
+        parameters: [
+          {
+            name: "year",
+            in: "query",
+            description: "Optional financial year lookup code (e.g. 2024, 2025). Omit to aggregate all years.",
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Aggregated financial overview with totals and record collections",
+            content: {
+              "application/json": {
+                example: {
+                  statusCode: 200,
+                  data: {
+                    year: "2024",
+                    totalIncome: 210000,
+                    totalExpenses: 97000,
+                    totalHomeExpenses: 67000,
+                    totalOtherExpenses: 30000,
+                    netSavings: 113000,
+                    counts: { incomes: 2, homeExpenses: 2, otherExpenses: 2, totalEntries: 6 },
+                  },
+                  message: "Finance summary retrieved successfully.",
+                  success: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    // ----------------------------------------------------
+    // FINANCE MODULE - STANDALONE INCOMES
+    // ----------------------------------------------------
+    "/api/v1/finance/incomes": {
+      get: {
+        tags: ["Finance - Incomes"],
+        summary: "Get All Active Incomes (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+          {
+            name: "year",
+            in: "query",
+            description: "Optional filter by financial year lookup code (e.g. 2024)",
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Active income sources list with pagination metadata" },
+        },
+      },
+      post: {
+        tags: ["Finance - Incomes"],
+        summary: "Add New Income Source",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["title", "source", "year", "amount"],
+                properties: {
+                  title: { type: "string", example: "Monthly Base Salary" },
+                  source: { type: "string", example: "Govt School Main Campus" },
+                  year: { type: "string", example: "2024" },
+                  amount: { type: "number", example: 150000 },
+                  notes: { type: "string", example: "Regular faculty remuneration" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Income source created successfully" },
+          400: { description: "Validation error" },
+        },
+      },
+    },
+
+    "/api/v1/finance/incomes/{id}": {
+      put: {
+        tags: ["Finance - Incomes"],
+        summary: "Update Income Item (SCD Type 2 Versioned)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            description: "ID of the income record to update",
+            schema: { type: "string" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["title", "source", "year", "amount"],
+                properties: {
+                  title: { type: "string", example: "Monthly Base Salary" },
+                  source: { type: "string", example: "Govt School Main Campus" },
+                  year: { type: "string", example: "2024" },
+                  amount: { type: "number", example: 165000 },
+                  notes: { type: "string", example: "Annual salary increment" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Income item updated and new version created" },
+          404: { description: "Income item not found" },
+        },
+      },
+      delete: {
+        tags: ["Finance - Incomes"],
+        summary: "Soft-Delete Income Item (Tombstoned)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            description: "ID of the income record to delete",
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Income item removed successfully" },
+          404: { description: "Income item not found" },
+        },
+      },
+    },
+
+    "/api/v1/finance/incomes/{id}/history": {
+      get: {
+        tags: ["Finance - Incomes"],
+        summary: "Get Version History for an Income Item (Paginated)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            description: "ID or Root ID of the income record",
+            schema: { type: "string" },
+          },
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
+        responses: {
+          200: { description: "Income item audit versions timeline" },
+        },
+      },
+    },
+
+    "/api/v1/finance/incomes/history/all": {
+      get: {
+        tags: ["Finance - Incomes"],
+        summary: "Get Full Audit History for All Incomes (Paginated)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+          {
+            name: "year",
+            in: "query",
+            description: "Filter audit history by financial year",
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Full chronological income audit log" },
+        },
+      },
+    },
+
+    // ----------------------------------------------------
+    // FINANCE MODULE - HOME EXPENSES
+    // ----------------------------------------------------
+    "/api/v1/finance/expenses/home": {
+      get: {
+        tags: ["Finance - Home Expenses"],
+        summary: "Get All Active Home Expenses (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+          {
+            name: "year",
+            in: "query",
+            description: "Optional filter by financial year lookup code (e.g. 2024)",
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Active home expenses list" },
+        },
+      },
+      post: {
+        tags: ["Finance - Home Expenses"],
+        summary: "Add New Home Expense",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["year", "title", "amount"],
+                properties: {
+                  year: { type: "string", example: "2024" },
+                  title: { type: "string", example: "House Rent" },
+                  amount: { type: "number", example: 40000 },
+                  notes: { type: "string", example: "Monthly apartment lease" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Home expense created" },
+          400: { description: "Validation error" },
+        },
+      },
+    },
+
+    "/api/v1/finance/expenses/home/{id}": {
+      put: {
+        tags: ["Finance - Home Expenses"],
+        summary: "Update Home Expense (SCD Type 2 Versioned)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            description: "ID of the home expense to update",
+            schema: { type: "string" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["year", "title", "amount"],
+                properties: {
+                  year: { type: "string", example: "2024" },
+                  title: { type: "string", example: "House Rent" },
+                  amount: { type: "number", example: 42000 },
+                  notes: { type: "string", example: "Landlord revision" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Home expense updated" },
+          404: { description: "Home expense not found" },
+        },
+      },
+      delete: {
+        tags: ["Finance - Home Expenses"],
+        summary: "Soft-Delete Home Expense (Tombstoned)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            description: "ID of the home expense to delete",
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Home expense removed" },
+          404: { description: "Home expense not found" },
+        },
+      },
+    },
+
+    "/api/v1/finance/expenses/home/{id}/history": {
+      get: {
+        tags: ["Finance - Home Expenses"],
+        summary: "Get Version History for a Home Expense (Paginated)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
+        responses: {
+          200: { description: "Home expense audit versions timeline" },
+        },
+      },
+    },
+
+    "/api/v1/finance/expenses/home/history/all": {
+      get: {
+        tags: ["Finance - Home Expenses"],
+        summary: "Get Full Audit History for All Home Expenses (Paginated)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+          {
+            name: "year",
+            in: "query",
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Full chronological home expenses audit history" },
+        },
+      },
+    },
+
+    // ----------------------------------------------------
+    // FINANCE MODULE - OTHER EXPENSES
+    // ----------------------------------------------------
+    "/api/v1/finance/expenses/other": {
+      get: {
+        tags: ["Finance - Other Expenses"],
+        summary: "Get All Active Other Expenses (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+          {
+            name: "year",
+            in: "query",
+            description: "Optional filter by financial year lookup code (e.g. 2024)",
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Active other expenses list" },
+        },
+      },
+      post: {
+        tags: ["Finance - Other Expenses"],
+        summary: "Add New Other Expense",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["year", "title", "amount"],
+                properties: {
+                  year: { type: "string", example: "2024" },
+                  title: { type: "string", example: "Vehicle Fuel & Maintenance" },
+                  amount: { type: "number", example: 18000 },
+                  notes: { type: "string", example: "Fuel and maintenance" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Other expense created" },
+          400: { description: "Validation error" },
+        },
+      },
+    },
+
+    "/api/v1/finance/expenses/other/{id}": {
+      put: {
+        tags: ["Finance - Other Expenses"],
+        summary: "Update Other Expense (SCD Type 2 Versioned)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["year", "title", "amount"],
+                properties: {
+                  year: { type: "string", example: "2024" },
+                  title: { type: "string", example: "Vehicle Fuel & Maintenance" },
+                  amount: { type: "number", example: 20000 },
+                  notes: { type: "string", example: "Major vehicle overhaul" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Other expense updated" },
+          404: { description: "Other expense not found" },
+        },
+      },
+      delete: {
+        tags: ["Finance - Other Expenses"],
+        summary: "Soft-Delete Other Expense (Tombstoned)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Other expense removed" },
+          404: { description: "Other expense not found" },
+        },
+      },
+    },
+
+    "/api/v1/finance/expenses/other/{id}/history": {
+      get: {
+        tags: ["Finance - Other Expenses"],
+        summary: "Get Version History for an Other Expense (Paginated)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
+        responses: {
+          200: { description: "Other expense audit versions timeline" },
+        },
+      },
+    },
+
+    "/api/v1/finance/expenses/other/history/all": {
+      get: {
+        tags: ["Finance - Other Expenses"],
+        summary: "Get Full Audit History for All Other Expenses (Paginated)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+          {
+            name: "year",
+            in: "query",
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Full chronological other expenses audit history" },
         },
       },
     },

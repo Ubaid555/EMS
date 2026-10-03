@@ -92,6 +92,17 @@ export const isCodeActive = (category, code) => {
 };
 
 /**
+ * Retrieve the ObjectId of a Lookup item from RAM cache
+ */
+export const getLookupId = (category, code) => {
+  if (!category || !code) return null;
+  const cat = category.toUpperCase();
+  const cd = code.toUpperCase();
+  const categoryMap = lookupCache.get(cat);
+  return categoryMap?.get(cd)?.id || null;
+};
+
+/**
  * Validate an incoming lookup code:
  * 1. Checks if the code exists (rejects random malicious input like "ALIEN")
  * 2. If inactive, allows it ONLY if it is an untouched legacy value from an existing record (Grandfathering)
@@ -164,6 +175,7 @@ export default {
   ensureCacheInitialized,
   isCodeValid,
   isCodeActive,
+  getLookupId,
   validateLookupField,
   getLookupCacheSummary,
 };

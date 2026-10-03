@@ -70,6 +70,19 @@ export const initialLookups = [
   { category: "NATIONALITY_STATUS", code: "REVOKED", label: "Revoked", sortOrder: 2 },
   { category: "NATIONALITY_STATUS", code: "RENOUNCED", label: "Renounced", sortOrder: 3 },
   { category: "NATIONALITY_STATUS", code: "DUAL", label: "Dual Citizen", sortOrder: 4 },
+
+  // FINANCIAL / CALENDAR YEAR
+  { category: "YEAR", code: "2020", label: "2020", sortOrder: 1 },
+  { category: "YEAR", code: "2021", label: "2021", sortOrder: 2 },
+  { category: "YEAR", code: "2022", label: "2022", sortOrder: 3 },
+  { category: "YEAR", code: "2023", label: "2023", sortOrder: 4 },
+  { category: "YEAR", code: "2024", label: "2024", sortOrder: 5 },
+  { category: "YEAR", code: "2025", label: "2025", sortOrder: 6 },
+  { category: "YEAR", code: "2026", label: "2026", sortOrder: 7 },
+  { category: "YEAR", code: "2027", label: "2027", sortOrder: 8 },
+  { category: "YEAR", code: "2028", label: "2028", sortOrder: 9 },
+  { category: "YEAR", code: "2029", label: "2029", sortOrder: 10 },
+  { category: "YEAR", code: "2030", label: "2030", sortOrder: 11 },
 ];
 
 export const seedLookups = async (options = { isStandalone: false }) => {
