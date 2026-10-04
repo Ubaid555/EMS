@@ -161,7 +161,7 @@ export default function AppShell() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 py-2.5">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider pr-2 border-r border-slate-200 shrink-0 hidden sm:inline-block">
-                {activeModuleId} Sections
+                {activeModuleId.toUpperCase()} SECTIONS
               </span>
 
               {activeSubSections.map((sec) => {

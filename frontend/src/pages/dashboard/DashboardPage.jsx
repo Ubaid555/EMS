@@ -56,17 +56,17 @@ export default function DashboardPage() {
         <Card className="hover:border-sky-300 transition-all hover:shadow-md flex flex-col justify-between">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <Badge variant="primary">5 Sub-Sections</Badge>
+              <Badge variant="primary">Employee Dossier</Badge>
               <span className="text-xs text-slate-400 font-mono">Module 01</span>
             </div>
             <CardTitle className="mt-2 text-slate-900">Employee Profile</CardTitle>
             <CardDescription>
-              Personal details, dual residential addresses, verified qualifications, and career service history.
+              Personal bio, identity verification, dual residential addresses, contact points, and languages.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-xs text-slate-500 leading-relaxed">
-              Includes Form 1 (Bio), Form 2 (Contact & Address), Form 4 (Academics), and Forms 9 & 10 (Pay & Service).
+              Includes Basic Bio, CNIC & NADRA identity, Present & Permanent addresses, contact channels, and language proficiencies.
             </p>
             <Button
               variant="outline"
