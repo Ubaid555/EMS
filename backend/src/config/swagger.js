@@ -75,6 +75,10 @@ export const swaggerDocument = {
     { name: "Finance - Home Expenses", description: "Finance Module: Household & Domestic Expenses Flow (Multi-Entity SCD2)" },
     { name: "Finance - Other Expenses", description: "Finance Module: Miscellaneous & Other Expenses Flow (Multi-Entity SCD2)" },
     { name: "Finance - Summary", description: "Finance Module: Consolidated Financial Overview & Net Savings" },
+    { name: "Family - Summary", description: "Family Module: Consolidated Dependents & Member Overview" },
+    { name: "Family - Spouses", description: "Family Module: Multiple Spouses with CNIC, Passport & Education" },
+    { name: "Family - Children", description: "Family Module: Multiple Children with B-Form, Education & Occupation" },
+    { name: "Family - Parents", description: "Family Module: Multiple Fathers & Mothers with CNIC, Medical Category & Assets" },
     { name: "System Health", description: "API Status & Liveness" },
   ],
   paths: {
@@ -1578,6 +1582,751 @@ export const swaggerDocument = {
         ],
         responses: {
           200: { description: "Full chronological other expenses audit history" },
+        },
+      },
+    },
+
+    // ----------------------------------------------------
+    // FAMILY MODULE - SUMMARY
+    // ----------------------------------------------------
+    "/api/v1/family/summary": {
+      get: {
+        tags: ["Family - Summary"],
+        summary: "Get Consolidated Family Summary & Dependents Count",
+        responses: {
+          200: {
+            description: "Aggregated family members overview with counts and collections",
+          },
+        },
+      },
+    },
+
+    // ----------------------------------------------------
+    // FAMILY MODULE - SPOUSES
+    // ----------------------------------------------------
+    "/api/v1/family/spouses": {
+      get: {
+        tags: ["Family - Spouses"],
+        summary: "Get All Active Spouses (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
+        responses: {
+          200: { description: "List of active spouses with pagination metadata" },
+        },
+      },
+      post: {
+        tags: ["Family - Spouses"],
+        summary: "Add New Spouse Profile",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["name"],
+                properties: {
+                  name: { type: "string", example: "Ayesha Khan" },
+                  marriageDate: { type: "string", format: "date", example: "2015-06-20" },
+                  status: { type: "string", example: "MARRIED" },
+                  isAlive: { type: "boolean", example: true },
+                  isDependent: { type: "boolean", example: true },
+                  nationality: { type: "string", example: "PAKISTANI" },
+                  notes: { type: "string", example: "First spouse" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Spouse profile created" },
+        },
+      },
+    },
+
+    "/api/v1/family/spouses/{id}": {
+      put: {
+        tags: ["Family - Spouses"],
+        summary: "Update Spouse Profile (SCD Type 2 Versioned)",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string", example: "Ayesha Khan" },
+                  marriageDate: { type: "string", format: "date", example: "2015-06-20" },
+                  status: { type: "string", example: "MARRIED" },
+                  isAlive: { type: "boolean", example: true },
+                  isDependent: { type: "boolean", example: true },
+                  notes: { type: "string", example: "Updated spouse details" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Spouse profile updated" },
+        },
+      },
+      delete: {
+        tags: ["Family - Spouses"],
+        summary: "Soft-Delete Spouse Profile (Tombstoned)",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Spouse profile removed" },
+        },
+      },
+    },
+
+    "/api/v1/family/spouses/{spouseId}/cnic": {
+      get: {
+        tags: ["Family - Spouses"],
+        summary: "Get CNIC for a Specific Spouse",
+        parameters: [
+          { name: "spouseId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Spouse CNIC details" },
+        },
+      },
+      post: {
+        tags: ["Family - Spouses"],
+        summary: "Save / Update CNIC for a Specific Spouse",
+        parameters: [
+          { name: "spouseId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["cnicNumber"],
+                properties: {
+                  cnicNumber: { type: "string", example: "35201-1234567-2" },
+                  issueDate: { type: "string", format: "date", example: "2016-01-15" },
+                  expiryDate: { type: "string", format: "date", example: "2026-01-15" },
+                  familyNumber: { type: "string", example: "FAM-9988" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Spouse CNIC saved" },
+        },
+      },
+      delete: {
+        tags: ["Family - Spouses"],
+        summary: "Soft-Delete Spouse CNIC",
+        parameters: [
+          { name: "spouseId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Spouse CNIC removed" },
+        },
+      },
+    },
+
+    "/api/v1/family/spouses/{spouseId}/passport": {
+      get: {
+        tags: ["Family - Spouses"],
+        summary: "Get Passport for a Specific Spouse",
+        parameters: [
+          { name: "spouseId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Spouse passport details" },
+        },
+      },
+      post: {
+        tags: ["Family - Spouses"],
+        summary: "Save / Update Passport for a Specific Spouse",
+        parameters: [
+          { name: "spouseId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["passportNumber"],
+                properties: {
+                  passportNumber: { type: "string", example: "PK78945612" },
+                  country: { type: "string", example: "PAKISTAN" },
+                  expiryDate: { type: "string", format: "date", example: "2030-05-20" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Spouse passport saved" },
+        },
+      },
+      delete: {
+        tags: ["Family - Spouses"],
+        summary: "Soft-Delete Spouse Passport",
+        parameters: [
+          { name: "spouseId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Spouse passport removed" },
+        },
+      },
+    },
+
+    "/api/v1/family/spouses/{spouseId}/education": {
+      get: {
+        tags: ["Family - Spouses"],
+        summary: "Get All Education Degrees for a Specific Spouse",
+        parameters: [
+          { name: "spouseId", in: "path", required: true, schema: { type: "string" } },
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+        ],
+        responses: {
+          200: { description: "Spouse education records" },
+        },
+      },
+      post: {
+        tags: ["Family - Spouses"],
+        summary: "Add Education Degree for a Specific Spouse",
+        parameters: [
+          { name: "spouseId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["degreeLevel", "degreeName", "institute"],
+                properties: {
+                  degreeLevel: { type: "string", example: "MASTERS" },
+                  degreeName: { type: "string", example: "M.Sc in Applied Psychology" },
+                  institute: { type: "string", example: "Punjab University Lahore" },
+                  passingYear: { type: "string", example: "2014" },
+                  gradeOrGpa: { type: "string", example: "3.75 CGPA" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Spouse education degree created" },
+        },
+      },
+    },
+
+    "/api/v1/family/spouses/{spouseId}/education/{id}": {
+      put: {
+        tags: ["Family - Spouses"],
+        summary: "Update Spouse Education Degree",
+        parameters: [
+          { name: "spouseId", in: "path", required: true, schema: { type: "string" } },
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Spouse education updated" },
+        },
+      },
+      delete: {
+        tags: ["Family - Spouses"],
+        summary: "Delete Spouse Education Degree",
+        parameters: [
+          { name: "spouseId", in: "path", required: true, schema: { type: "string" } },
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Spouse education removed" },
+        },
+      },
+    },
+
+    // ----------------------------------------------------
+    // FAMILY MODULE - CHILDREN
+    // ----------------------------------------------------
+    "/api/v1/family/children": {
+      get: {
+        tags: ["Family - Children"],
+        summary: "Get All Active Children (Paginated & Searchable)",
+        parameters: [
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+          { $ref: "#/components/parameters/searchFieldsParam" },
+          { $ref: "#/components/parameters/sortByParam" },
+          { $ref: "#/components/parameters/sortOrderParam" },
+        ],
+        responses: {
+          200: { description: "Children list" },
+        },
+      },
+      post: {
+        tags: ["Family - Children"],
+        summary: "Add New Child Profile",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["name", "gender", "dateOfBirth"],
+                properties: {
+                  name: { type: "string", example: "Zainab Ali" },
+                  gender: { type: "string", example: "FEMALE" },
+                  dateOfBirth: { type: "string", format: "date", example: "2012-05-14" },
+                  childType: { type: "string", example: "BIOLOGICAL" },
+                  orderOfBirth: { type: "number", example: 1 },
+                  isAlive: { type: "boolean", example: true },
+                  isDependent: { type: "boolean", example: true },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Child created" },
+        },
+      },
+    },
+
+    "/api/v1/family/children/{id}": {
+      put: {
+        tags: ["Family - Children"],
+        summary: "Update Child Profile",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Child profile updated" },
+        },
+      },
+      delete: {
+        tags: ["Family - Children"],
+        summary: "Soft-Delete Child Profile",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Child profile removed" },
+        },
+      },
+    },
+
+    "/api/v1/family/children/{childId}/cnic": {
+      get: {
+        tags: ["Family - Children"],
+        summary: "Get B-Form or CNIC for a Child",
+        parameters: [
+          { name: "childId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Child B-Form/CNIC details" },
+        },
+      },
+      post: {
+        tags: ["Family - Children"],
+        summary: "Save / Update B-Form or CNIC for a Child",
+        parameters: [
+          { name: "childId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["idNumber"],
+                properties: {
+                  idType: { type: "string", enum: ["B_FORM", "CNIC"], example: "B_FORM" },
+                  idNumber: { type: "string", example: "35201-9876543-2" },
+                  familyNumber: { type: "string", example: "FAM-9988" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Child B-Form/CNIC saved" },
+        },
+      },
+      delete: {
+        tags: ["Family - Children"],
+        summary: "Soft-Delete Child B-Form/CNIC",
+        parameters: [
+          { name: "childId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Child B-Form removed" },
+        },
+      },
+    },
+
+    "/api/v1/family/children/{childId}/education": {
+      get: {
+        tags: ["Family - Children"],
+        summary: "Get School / College Records for a Child",
+        parameters: [
+          { name: "childId", in: "path", required: true, schema: { type: "string" } },
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+        ],
+        responses: {
+          200: { description: "Child education records" },
+        },
+      },
+      post: {
+        tags: ["Family - Children"],
+        summary: "Add School / College Record for a Child",
+        parameters: [
+          { name: "childId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["institute", "currentClass"],
+                properties: {
+                  institute: { type: "string", example: "Beaconhouse School System" },
+                  currentClass: { type: "string", example: "Grade 7" },
+                  enrollmentStatus: { type: "string", example: "ENROLLED" },
+                  boardOrUniversity: { type: "string", example: "FBISE Islamabad" },
+                  isFeeReimbursable: { type: "boolean", example: true },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Child school record created" },
+        },
+      },
+    },
+
+    "/api/v1/family/children/{childId}/education/{id}": {
+      put: {
+        tags: ["Family - Children"],
+        summary: "Update Child School Record",
+        parameters: [
+          { name: "childId", in: "path", required: true, schema: { type: "string" } },
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Child education updated" },
+        },
+      },
+      delete: {
+        tags: ["Family - Children"],
+        summary: "Delete Child School Record",
+        parameters: [
+          { name: "childId", in: "path", required: true, schema: { type: "string" } },
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Child education removed" },
+        },
+      },
+    },
+
+    "/api/v1/family/children/{childId}/occupation": {
+      get: {
+        tags: ["Family - Children"],
+        summary: "Get Occupation / Career Status for a Child",
+        parameters: [
+          { name: "childId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Child occupation status" },
+        },
+      },
+      post: {
+        tags: ["Family - Children"],
+        summary: "Save / Update Occupation for a Child",
+        parameters: [
+          { name: "childId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["status"],
+                properties: {
+                  status: { type: "string", example: "STUDENT" },
+                  organizationName: { type: "string", example: "Beaconhouse School System" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Child occupation saved" },
+        },
+      },
+      delete: {
+        tags: ["Family - Children"],
+        summary: "Soft-Delete Child Occupation",
+        parameters: [
+          { name: "childId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Child occupation removed" },
+        },
+      },
+    },
+
+    // ----------------------------------------------------
+    // FAMILY MODULE - PARENTS
+    // ----------------------------------------------------
+    "/api/v1/family/parents": {
+      get: {
+        tags: ["Family - Parents"],
+        summary: "Get All Active Parents (Fathers & Mothers)",
+        parameters: [
+          {
+            name: "parentType",
+            in: "query",
+            description: "Filter by parent type (FATHER or MOTHER)",
+            schema: { type: "string", enum: ["FATHER", "MOTHER"] },
+          },
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+          { $ref: "#/components/parameters/searchParam" },
+        ],
+        responses: {
+          200: { description: "Parents list" },
+        },
+      },
+      post: {
+        tags: ["Family - Parents"],
+        summary: "Add New Parent Profile (Biological, Adopted, Step)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["name", "parentType"],
+                properties: {
+                  name: { type: "string", example: "Muhammad Ali" },
+                  parentType: { type: "string", enum: ["FATHER", "MOTHER"], example: "FATHER" },
+                  lineageType: { type: "string", enum: ["BIOLOGICAL", "ADOPTED", "STEP"], example: "BIOLOGICAL" },
+                  isAlive: { type: "boolean", example: true },
+                  isDependent: { type: "boolean", example: true },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Parent created" },
+        },
+      },
+    },
+
+    "/api/v1/family/parents/{id}": {
+      put: {
+        tags: ["Family - Parents"],
+        summary: "Update Parent Profile",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Parent updated" },
+        },
+      },
+      delete: {
+        tags: ["Family - Parents"],
+        summary: "Soft-Delete Parent Profile",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Parent removed" },
+        },
+      },
+    },
+
+    "/api/v1/family/parents/{parentId}/cnic": {
+      get: {
+        tags: ["Family - Parents"],
+        summary: "Get Parent CNIC",
+        parameters: [
+          { name: "parentId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Parent CNIC details" },
+        },
+      },
+      post: {
+        tags: ["Family - Parents"],
+        summary: "Save / Update Parent CNIC",
+        parameters: [
+          { name: "parentId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["cnicNumber"],
+                properties: {
+                  cnicNumber: { type: "string", example: "35201-5555555-1" },
+                  familyNumber: { type: "string", example: "FAM-9988" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Parent CNIC saved" },
+        },
+      },
+      delete: {
+        tags: ["Family - Parents"],
+        summary: "Soft-Delete Parent CNIC",
+        parameters: [
+          { name: "parentId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Parent CNIC removed" },
+        },
+      },
+    },
+
+    "/api/v1/family/parents/{parentId}/medical": {
+      get: {
+        tags: ["Family - Parents"],
+        summary: "Get Parent Medical & Health Entitlement Details",
+        parameters: [
+          { name: "parentId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Parent medical details" },
+        },
+      },
+      post: {
+        tags: ["Family - Parents"],
+        summary: "Save / Update Parent Medical Details",
+        parameters: [
+          { name: "parentId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  category: { type: "string", example: "CATEGORY_A" },
+                  bloodGroup: { type: "string", example: "B_POS" },
+                  hospitalRegistrationNumber: { type: "string", example: "HOSP-MED-4421" },
+                  chronicIllness: { type: "string", example: "Hypertension, Mild Diabetes" },
+                  specialCareInstructions: { type: "string", example: "Quarterly checkup" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Parent medical record saved" },
+        },
+      },
+      delete: {
+        tags: ["Family - Parents"],
+        summary: "Soft-Delete Parent Medical Details",
+        parameters: [
+          { name: "parentId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Parent medical record removed" },
+        },
+      },
+    },
+
+    "/api/v1/family/parents/{parentId}/assets": {
+      get: {
+        tags: ["Family - Parents"],
+        summary: "Get All Declared Assets for a Parent",
+        parameters: [
+          { name: "parentId", in: "path", required: true, schema: { type: "string" } },
+          { $ref: "#/components/parameters/pageParam" },
+          { $ref: "#/components/parameters/limitParam" },
+        ],
+        responses: {
+          200: { description: "Parent assets list" },
+        },
+      },
+      post: {
+        tags: ["Family - Parents"],
+        summary: "Add Declared Asset for a Parent",
+        parameters: [
+          { name: "parentId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["assetType", "title"],
+                properties: {
+                  assetType: { type: "string", example: "AGRICULTURAL_LAND" },
+                  title: { type: "string", example: "10 Acres Cultivated Land" },
+                  estimatedValue: { type: "number", example: 6500000 },
+                  location: { type: "string", example: "District Kasur, Punjab" },
+                  ownershipSharePercentage: { type: "number", example: 100 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Parent asset created" },
+        },
+      },
+    },
+
+    "/api/v1/family/parents/{parentId}/assets/{id}": {
+      put: {
+        tags: ["Family - Parents"],
+        summary: "Update Declared Asset for a Parent",
+        parameters: [
+          { name: "parentId", in: "path", required: true, schema: { type: "string" } },
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Parent asset updated" },
+        },
+      },
+      delete: {
+        tags: ["Family - Parents"],
+        summary: "Delete Declared Asset for a Parent",
+        parameters: [
+          { name: "parentId", in: "path", required: true, schema: { type: "string" } },
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Parent asset removed" },
         },
       },
     },

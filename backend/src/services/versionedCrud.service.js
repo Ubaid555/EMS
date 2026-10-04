@@ -145,9 +145,10 @@ export const executeVersionTransition = async ({ Model, current, newRecordData }
 /**
  * Fetch current active single-entity record (or null if not yet created)
  */
-export const getSingleActive = async (Model, employeeId) => {
+export const getSingleActive = async (Model, employeeId, scopeFilter = {}) => {
   return await Model.findOne({
     employeeId,
+    ...scopeFilter,
     isCurrent: true,
     isDeleted: false,
   }).lean();
@@ -156,9 +157,16 @@ export const getSingleActive = async (Model, employeeId) => {
 /**
  * Save or Update a single-entity record with automatic version chaining
  */
-export const saveSingle = async (Model, employeeId, payload, changedBy) => {
+export const saveSingle = async (
+  Model,
+  employeeId,
+  payload,
+  changedBy,
+  scopeFilter = {}
+) => {
   const current = await Model.findOne({
     employeeId,
+    ...scopeFilter,
     isCurrent: true,
     isDeleted: false,
   });
@@ -169,6 +177,7 @@ export const saveSingle = async (Model, employeeId, payload, changedBy) => {
 
     const newRecordData = {
       ...payload,
+      ...scopeFilter,
       employeeId,
       version: current.version + 1,
       isCurrent: true,
@@ -187,6 +196,7 @@ export const saveSingle = async (Model, employeeId, payload, changedBy) => {
 
   const initialRecord = await Model.create({
     ...payload,
+    ...scopeFilter,
     employeeId,
     version: 1,
     isCurrent: true,
@@ -203,9 +213,15 @@ export const saveSingle = async (Model, employeeId, payload, changedBy) => {
 /**
  * Soft-delete a single-entity record with an audit tombstone
  */
-export const deleteSingle = async (Model, employeeId, changedBy) => {
+export const deleteSingle = async (
+  Model,
+  employeeId,
+  changedBy,
+  scopeFilter = {}
+) => {
   const current = await Model.findOne({
     employeeId,
+    ...scopeFilter,
     isCurrent: true,
     isDeleted: false,
   });
@@ -242,7 +258,10 @@ export const getSingleHistory = async (
   queryParams = {},
   options = {}
 ) => {
-  const baseFilter = { employeeId };
+  const baseFilter = {
+    employeeId,
+    ...(options.baseFilter || {}),
+  };
 
   return await paginateQuery(Model, baseFilter, queryParams, {
     defaultSortBy: "version",

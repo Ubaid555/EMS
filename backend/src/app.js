@@ -13,6 +13,7 @@ import authRoutes from "./routes/auth.routes.js";
 import lookupRoutes from "./routes/lookup.routes.js";
 import employeeRoutes from "./routes/employee/index.js";
 import financeRoutes from "./routes/finance/index.js";
+import familyRoutes from "./routes/family/index.js";
 import { serveSwagger, setupSwagger } from "./config/swagger.js";
 
 const app = express();
@@ -63,6 +64,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/lookups", lookupRoutes);
 app.use("/api/v1/employee", employeeRoutes);
 app.use("/api/v1/finance", financeRoutes);
+app.use("/api/v1/family", familyRoutes);
 
 app.get("/api/health", (req, res) => {
   res

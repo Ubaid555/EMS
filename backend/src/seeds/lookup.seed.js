@@ -83,6 +83,62 @@ export const initialLookups = [
   { category: "YEAR", code: "2028", label: "2028", sortOrder: 9 },
   { category: "YEAR", code: "2029", label: "2029", sortOrder: 10 },
   { category: "YEAR", code: "2030", label: "2030", sortOrder: 11 },
+
+  // FAMILY: SPOUSE STATUS
+  { category: "SPOUSE_STATUS", code: "MARRIED", label: "Married", sortOrder: 1 },
+  { category: "SPOUSE_STATUS", code: "DIVORCED", label: "Divorced", sortOrder: 2 },
+  { category: "SPOUSE_STATUS", code: "WIDOWED", label: "Widowed", sortOrder: 3 },
+  { category: "SPOUSE_STATUS", code: "SEPARATED", label: "Separated", sortOrder: 4 },
+
+  // FAMILY: DEGREE LEVEL
+  { category: "DEGREE_LEVEL", code: "PRIMARY", label: "Primary / Middle", sortOrder: 1 },
+  { category: "DEGREE_LEVEL", code: "MATRIC", label: "Matriculation / O-Levels", sortOrder: 2 },
+  { category: "DEGREE_LEVEL", code: "INTERMEDIATE", label: "Intermediate / A-Levels", sortOrder: 3 },
+  { category: "DEGREE_LEVEL", code: "BACHELORS", label: "Bachelors / Undergraduate", sortOrder: 4 },
+  { category: "DEGREE_LEVEL", code: "MASTERS", label: "Masters / Postgraduate", sortOrder: 5 },
+  { category: "DEGREE_LEVEL", code: "MPHIL", label: "M.Phil / MS", sortOrder: 6 },
+  { category: "DEGREE_LEVEL", code: "PHD", label: "Ph.D. / Doctorate", sortOrder: 7 },
+  { category: "DEGREE_LEVEL", code: "DIPLOMA", label: "Diploma / Certificate", sortOrder: 8 },
+  { category: "DEGREE_LEVEL", code: "OTHER", label: "Other", sortOrder: 9 },
+
+  // FAMILY: PARENT TYPE
+  { category: "PARENT_TYPE", code: "FATHER", label: "Father", sortOrder: 1 },
+  { category: "PARENT_TYPE", code: "MOTHER", label: "Mother", sortOrder: 2 },
+
+  // FAMILY: LINEAGE TYPE
+  { category: "LINEAGE_TYPE", code: "BIOLOGICAL", label: "Biological (Own)", sortOrder: 1 },
+  { category: "LINEAGE_TYPE", code: "ADOPTED", label: "Adopted", sortOrder: 2 },
+  { category: "LINEAGE_TYPE", code: "STEP", label: "Step Parent / Child", sortOrder: 3 },
+
+  // FAMILY: CHILD TYPE
+  { category: "CHILD_TYPE", code: "BIOLOGICAL", label: "Biological", sortOrder: 1 },
+  { category: "CHILD_TYPE", code: "ADOPTED", label: "Adopted", sortOrder: 2 },
+  { category: "CHILD_TYPE", code: "STEP_CHILD", label: "Step Child", sortOrder: 3 },
+
+  // FAMILY: CHILD OCCUPATION STATUS
+  { category: "CHILD_OCCUPATION_STATUS", code: "STUDENT", label: "Student", sortOrder: 1 },
+  { category: "CHILD_OCCUPATION_STATUS", code: "EMPLOYED", label: "Employed", sortOrder: 2 },
+  { category: "CHILD_OCCUPATION_STATUS", code: "SELF_EMPLOYED", label: "Self-Employed / Business", sortOrder: 3 },
+  { category: "CHILD_OCCUPATION_STATUS", code: "UNEMPLOYED", label: "Unemployed", sortOrder: 4 },
+
+  // FAMILY: STUDY ENROLLMENT STATUS
+  { category: "STUDY_STATUS", code: "ENROLLED", label: "Currently Enrolled", sortOrder: 1 },
+  { category: "STUDY_STATUS", code: "COMPLETED", label: "Completed", sortOrder: 2 },
+  { category: "STUDY_STATUS", code: "DISCONTINUED", label: "Discontinued", sortOrder: 3 },
+
+  // FAMILY: MEDICAL CATEGORY
+  { category: "MEDICAL_CATEGORY", code: "CATEGORY_A", label: "Category A (Executive)", sortOrder: 1 },
+  { category: "MEDICAL_CATEGORY", code: "CATEGORY_B", label: "Category B (Standard)", sortOrder: 2 },
+  { category: "MEDICAL_CATEGORY", code: "CATEGORY_C", label: "Category C (Basic)", sortOrder: 3 },
+  { category: "MEDICAL_CATEGORY", code: "DISABILITY", label: "Special Needs / Disability", sortOrder: 4 },
+
+  // FAMILY: ASSET TYPE
+  { category: "ASSET_TYPE", code: "AGRICULTURAL_LAND", label: "Agricultural Land", sortOrder: 1 },
+  { category: "ASSET_TYPE", code: "RESIDENTIAL_PROPERTY", label: "Residential House / Apartment", sortOrder: 2 },
+  { category: "ASSET_TYPE", code: "COMMERCIAL_PROPERTY", label: "Commercial Property / Shop", sortOrder: 3 },
+  { category: "ASSET_TYPE", code: "VEHICLE", label: "Vehicle / Automobile", sortOrder: 4 },
+  { category: "ASSET_TYPE", code: "BANK_DEPOSIT", label: "Bank Deposits / Savings", sortOrder: 5 },
+  { category: "ASSET_TYPE", code: "OTHER", label: "Other Asset", sortOrder: 6 },
 ];
 
 export const seedLookups = async (options = { isStandalone: false }) => {
