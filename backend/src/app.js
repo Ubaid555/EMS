@@ -72,6 +72,12 @@ app.get("/api/health", (req, res) => {
     .json(new ApiResponse(200, null, "API is running successfully 🚀"));
 });
 
+app.get("/api/v1/health", (req, res) => {
+  res
+    .status(200)
+    .json(new ApiResponse(200, null, "API is running successfully 🚀"));
+});
+
 app.use(notFound);
 
 
